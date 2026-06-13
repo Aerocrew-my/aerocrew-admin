@@ -175,11 +175,23 @@ setUsers(allUsers)
             <span className="text-[#888] text-sm">Internal dashboard</span>
           </div>
           <div className="flex items-center gap-4">
-            <button
+             <button
               onClick={() => router.push('/dashboard/revenue')}
               className="text-[#BA7517] hover:text-[#E8920A] text-sm transition-colors font-medium"
             >
               Revenue
+            </button>
+            <button
+              onClick={() => router.push('/dashboard/analytics')}
+              className="text-[#378ADD] hover:text-blue-300 text-sm transition-colors font-medium"
+            >
+              Analytics
+            </button>
+            <button
+              onClick={() => router.push('/dashboard/zones')}
+              className="text-[#1D9E75] hover:text-green-300 text-sm transition-colors font-medium"
+            >
+              Zones
             </button>
             <button
               onClick={() => router.push('/dashboard/analytics')}
