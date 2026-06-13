@@ -40,45 +40,72 @@ export default function Dashboard() {
   }, [])
 
   const fetchUsers = async () => {
-    setLoading(true)
-    try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .neq('role', 'admin')
-        .order('created_at', { ascending: false })
-      if (error) throw error
-      const allUsers = data || []
-      setUsers(allUsers)
-      setStats({
-        totalCrew: allUsers.filter(u => u.role === 'crew').length,
-        totalOperators: allUsers.filter(u => u.role === 'operator').length,
-        pendingVerification: allUsers.filter(u =>
-          u.status === 'pending' || u.status === 'pending_verification'
-        ).length,
-        verifiedOperators: allUsers.filter(u =>
-          u.role === 'operator' && u.status === 'verified'
-        ).length,
-      })
-    } catch (e) {
-      console.error('Error fetching users:', e)
-    }
+  setLoading(true)
+
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .neq('role', 'admin')
+      .order('created_at', { ascending: false })
+
+    if (error) {
+  console.log("SUPABASE ERROR MESSAGE:", error.message)
+  console.log("SUPABASE ERROR DETAILS:", error.details)
+  console.log("SUPABASE ERROR HINT:", error.hint)
+  console.log("SUPABASE ERROR CODE:", error.code)
+  return
+}
+
+    const allUsers = data || []
+
+console.log("RAW DATA:", data)
+console.log("USER COUNT:", data?.length)
+
+setUsers(allUsers)
+
+    setStats({
+      totalCrew: allUsers.filter(u => u.role === 'crew').length,
+      totalOperators: allUsers.filter(u => u.role === 'operator').length,
+      pendingVerification: allUsers.filter(u =>
+        u.status === 'pending' || u.status === 'pending_verification'
+      ).length,
+      verifiedOperators: allUsers.filter(u =>
+        u.role === 'operator' && u.status === 'verified'
+      ).length,
+    })
+
+  } catch (e) {
+    console.error("FETCH FAILED:", e)
+  } finally {
     setLoading(false)
   }
+}
 
   const fetchPools = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('active_pools')
-        .select('*')
-        .limit(20)
-      if (error) throw error
-      setPools(data || [])
-      setShowPools(true)
-    } catch (e) {
-      console.error('Error fetching pools:', e)
+  try {
+    const { data, error } = await supabase
+      .from('active_pools')
+      .select('*')
+      .limit(20)
+
+    if (error) {
+      console.log("POOL ERROR MESSAGE:", error.message)
+      console.log("POOL ERROR DETAILS:", error.details)
+      console.log("POOL ERROR HINT:", error.hint)
+      console.log("POOL ERROR CODE:", error.code)
+      return
     }
+
+    console.log("POOLS FOUND:", data)
+
+    setPools(data || [])
+    setShowPools(true)
+
+  } catch (e) {
+    console.error("FETCH POOLS FAILED:", e)
   }
+}
 
   const updateStatus = async (userId: string, status: string) => {
     try {
@@ -147,15 +174,35 @@ export default function Dashboard() {
             <span className="text-[#2A3347] mx-2">|</span>
             <span className="text-[#888] text-sm">Internal dashboard</span>
           </div>
-          <button
-            onClick={() => {
-              localStorage.removeItem('aerocrew_admin_auth')
-              router.push('/')
-            }}
-            className="text-[#888] hover:text-white text-sm transition-colors"
-          >
-            Sign out
-          </button>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => router.push('/dashboard/revenue')}
+              className="text-[#BA7517] hover:text-[#E8920A] text-sm transition-colors font-medium"
+            >
+              Revenue
+            </button>
+            <button
+              onClick={() => router.push('/dashboard/analytics')}
+              className="text-[#378ADD] hover:text-blue-300 text-sm transition-colors font-medium"
+            >
+              Analytics
+            </button>
+            <button
+              onClick={() => router.push('/dashboard/zones')}
+              className="text-[#1D9E75] hover:text-green-300 text-sm transition-colors font-medium"
+            >
+              Zones
+            </button>
+            <button
+              onClick={() => {
+                localStorage.removeItem('aerocrew_admin_auth')
+                router.push('/')
+              }}
+              className="text-[#888] hover:text-white text-sm transition-colors"
+            >
+              Sign out
+            </button>
+          </div>
         </div>
       </header>
 
