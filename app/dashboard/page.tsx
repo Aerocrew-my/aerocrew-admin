@@ -174,8 +174,8 @@ setUsers(allUsers)
             <span className="text-[#2A3347] mx-2">|</span>
             <span className="text-[#888] text-sm">Internal dashboard</span>
           </div>
-          <div className="flex items-center gap-4">
-             <button
+          <div className="flex items-center gap-4 flex-wrap">
+            <button
               onClick={() => router.push('/dashboard/revenue')}
               className="text-[#BA7517] hover:text-[#E8920A] text-sm transition-colors font-medium"
             >
@@ -218,28 +218,16 @@ setUsers(allUsers)
               Notify
             </button>
             <button
-              onClick={() => router.push('/dashboard/analytics')}
-              className="text-[#378ADD] hover:text-blue-300 text-sm transition-colors font-medium"
+              onClick={() => router.push('/dashboard/reports')}
+              className="text-orange-400 hover:text-orange-300 text-sm transition-colors font-medium"
             >
-              Analytics
+              Reports
             </button>
             <button
-              onClick={() => router.push('/dashboard/zones')}
-              className="text-[#1D9E75] hover:text-green-300 text-sm transition-colors font-medium"
+              onClick={() => router.push('/dashboard/settings')}
+              className="text-slate-400 hover:text-white text-sm transition-colors font-medium"
             >
-              Zones
-            </button>
-            <button
-              onClick={() => router.push('/dashboard/analytics')}
-              className="text-[#378ADD] hover:text-blue-300 text-sm transition-colors font-medium"
-            >
-              Analytics
-            </button>
-            <button
-              onClick={() => router.push('/dashboard/zones')}
-              className="text-[#1D9E75] hover:text-green-300 text-sm transition-colors font-medium"
-            >
-              Zones
+              Settings
             </button>
             <button
               onClick={() => {
@@ -250,7 +238,7 @@ setUsers(allUsers)
             >
               Sign out
             </button>
-          </div>
+                    </div>
         </div>
       </header>
 
@@ -367,13 +355,13 @@ setUsers(allUsers)
                           {(user.status === 'pending' || user.status === 'pending_verification') && (
                             <>
                               <button
-                                onClick={() => updateStatus(user.id, 'verified')}
+                                onClick={(e) => { e.stopPropagation(); updateStatus(user.id, 'verified') }}
                                 className="px-3 py-1 bg-green-900/30 hover:bg-green-900/50 text-green-400 text-xs font-semibold rounded-lg border border-green-500/20 transition-colors"
                               >
                                 Approve
                               </button>
                               <button
-                                onClick={() => updateStatus(user.id, 'rejected')}
+                                onClick={(e) => { e.stopPropagation(); updateStatus(user.id, 'rejected') }}
                                 className="px-3 py-1 bg-red-900/30 hover:bg-red-900/50 text-red-400 text-xs font-semibold rounded-lg border border-red-500/20 transition-colors"
                               >
                                 Reject
@@ -382,7 +370,7 @@ setUsers(allUsers)
                           )}
                           {user.status === 'verified' && (
                             <button
-                              onClick={() => updateStatus(user.id, 'suspended')}
+                              onClick={(e) => { e.stopPropagation(); updateStatus(user.id, 'suspended') }}
                               className="px-3 py-1 bg-[#1C2333] hover:bg-[#2A3347] text-[#888] text-xs font-semibold rounded-lg border border-[#2A3347] transition-colors"
                             >
                               Suspend
@@ -390,7 +378,7 @@ setUsers(allUsers)
                           )}
                           {user.status === 'suspended' && (
                             <button
-                              onClick={() => updateStatus(user.id, 'verified')}
+                              onClick={(e) => { e.stopPropagation(); updateStatus(user.id, 'verified') }}
                               className="px-3 py-1 bg-green-900/30 hover:bg-green-900/50 text-green-400 text-xs font-semibold rounded-lg border border-green-500/20 transition-colors"
                             >
                               Reinstate

@@ -1,0 +1,3083 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+.gitignore
+app/dashboard/analytics/page.tsx
+app/dashboard/leaderboard/page.tsx
+app/dashboard/notifications/page.tsx
+app/dashboard/operations/page.tsx
+app/dashboard/page.tsx
+app/dashboard/reconciliation/page.tsx
+app/dashboard/reports/page.tsx
+app/dashboard/revenue/page.tsx
+app/dashboard/settings/page.tsx
+app/dashboard/user/[id]/page.tsx
+app/dashboard/zones/page.tsx
+app/favicon.ico
+app/globals.css
+app/layout.tsx
+app/page.tsx
+eslint.config.mjs
+lib/supabase.ts
+next.config.ts
+package.json
+postcss.config.mjs
+public/file.svg
+public/globe.svg
+public/next.svg
+public/vercel.svg
+public/window.svg
+README.md
+tsconfig.json
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="app/dashboard/reports/page.tsx">
+"use client";
+
+import { useState } from "react";
+
+const PERIODS = ["Today", "This week", "This month", "All time"] as const;
+type Period = (typeof PERIODS)[number];
+
+interface StatCard {
+  label: string;
+  value: string;
+  change: string;
+  positive: boolean;
+}
+
+interface TripRow {
+  id: string;
+  crew: string;
+  route: string;
+  date: string;
+  fare: string;
+  status: "completed" | "cancelled" | "pending";
+}
+
+const statsByPeriod: Record<Period, StatCard[]> = {
+  Today: [
+    { label: "Total trips", value: "34", change: "+12% vs yesterday", positive: true },
+    { label: "Revenue", value: "RM 1,820", change: "+8% vs yesterday", positive: true },
+    { label: "Cancellations", value: "2", change: "-1 vs yesterday", positive: true },
+    { label: "Avg fare", value: "RM 53.50", change: "+3% vs yesterday", positive: true },
+  ],
+  "This week": [
+    { label: "Total trips", value: "198", change: "+22% vs last week", positive: true },
+    { label: "Revenue", value: "RM 10,540", change: "+18% vs last week", positive: true },
+    { label: "Cancellations", value: "11", change: "+3 vs last week", positive: false },
+    { label: "Avg fare", value: "RM 53.23", change: "+2% vs last week", positive: true },
+  ],
+  "This month": [
+    { label: "Total trips", value: "843", change: "+31% vs last month", positive: true },
+    { label: "Revenue", value: "RM 44,890", change: "+27% vs last month", positive: true },
+    { label: "Cancellations", value: "38", change: "-5 vs last month", positive: true },
+    { label: "Avg fare", value: "RM 53.25", change: "+1% vs last month", positive: true },
+  ],
+  "All time": [
+    { label: "Total trips", value: "5,210", change: "Since launch", positive: true },
+    { label: "Revenue", value: "RM 277,000", change: "Since launch", positive: true },
+    { label: "Cancellations", value: "194", change: "3.7% rate", positive: true },
+    { label: "Avg fare", value: "RM 53.17", change: "Platform average", positive: true },
+  ],
+};
+
+const recentTrips: TripRow[] = [
+  { id: "T-00891", crew: "Capt. Amir Razak", route: "Desa Petaling → KLIA T1", date: "Today, 06:40", fare: "RM 62.00", status: "completed" },
+  { id: "T-00890", crew: "FO Sarah Lim", route: "Kuchai Lama → KLIA2", date: "Today, 05:55", fare: "RM 55.50", status: "completed" },
+  { id: "T-00889", crew: "CC Priya Nair", route: "Cheras → Subang SZB", date: "Today, 04:20", fare: "RM 38.00", status: "cancelled" },
+  { id: "T-00888", crew: "Capt. Johan Tan", route: "Bangsar → KLIA T1", date: "Yesterday, 22:10", fare: "RM 68.00", status: "completed" },
+  { id: "T-00887", crew: "FO Nurul Ain", route: "Ampang → KLIA2", date: "Yesterday, 20:30", fare: "RM 57.00", status: "completed" },
+  { id: "T-00886", crew: "CC Kevin Wong", route: "Sri Petaling → KLIA T1", date: "Yesterday, 14:15", fare: "RM 60.00", status: "pending" },
+];
+
+const statusStyle: Record<TripRow["status"], string> = {
+  completed: "bg-emerald-500/10 text-emerald-400",
+  cancelled: "bg-red-500/10 text-red-400",
+  pending: "bg-amber-500/10 text-amber-400",
+};
+
+const topZones = [
+  { name: "KLIA Terminal 1", trips: 412, pct: 82 },
+  { name: "KLIA2", trips: 338, pct: 67 },
+  { name: "Subang SZB", trips: 201, pct: 40 },
+  { name: "Penang PEN", trips: 88, pct: 18 },
+];
+
+export default function ReportsPage() {
+  const [period, setPeriod] = useState<Period>("This week");
+
+  const stats = statsByPeriod[period];
+
+  return (
+    <div className="min-h-screen bg-[#0a0f1e] text-white p-6">
+      {/* Page header */}
+      <div className="mb-6">
+        <p className="text-xs text-amber-400 font-semibold tracking-widest uppercase mb-1">
+          Admin
+        </p>
+        <h1 className="text-2xl font-bold text-white">Reports</h1>
+        <p className="text-sm text-slate-400 mt-1">
+          Platform performance at a glance
+        </p>
+      </div>
+
+      {/* Period tabs */}
+      <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
+        {PERIODS.map((p) => (
+          <button
+            key={p}
+            onClick={() => setPeriod(p)}
+            className={`px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all border ${
+              period === p
+                ? "bg-amber-500 text-white border-amber-500"
+                : "bg-[#131929] text-slate-400 border-[#1e2a3a] hover:border-amber-500/40"
+            }`}
+          >
+            {p}
+          </button>
+        ))}
+      </div>
+
+      {/* Stat cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+        {stats.map((s) => (
+          <div
+            key={s.label}
+            className="bg-[#131929] rounded-2xl border border-[#1e2a3a] p-4"
+          >
+            <p className="text-xs text-slate-400 mb-2">{s.label}</p>
+            <p className="text-xl font-bold text-white mb-1">{s.value}</p>
+            <p
+              className={`text-xs font-medium ${
+                s.positive ? "text-emerald-400" : "text-red-400"
+              }`}
+            >
+              {s.change}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Recent trips */}
+        <div className="lg:col-span-2 bg-[#131929] rounded-2xl border border-[#1e2a3a] p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold text-white">Recent trips</h2>
+            <button className="text-xs text-amber-400 font-medium hover:underline">
+              Export CSV
+            </button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-xs text-slate-500 uppercase tracking-wide border-b border-[#1e2a3a]">
+                  <th className="text-left pb-3 font-semibold">Trip ID</th>
+                  <th className="text-left pb-3 font-semibold">Crew</th>
+                  <th className="text-left pb-3 font-semibold hidden md:table-cell">
+                    Route
+                  </th>
+                  <th className="text-left pb-3 font-semibold hidden sm:table-cell">
+                    Date
+                  </th>
+                  <th className="text-right pb-3 font-semibold">Fare</th>
+                  <th className="text-right pb-3 font-semibold">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#1e2a3a]">
+                {recentTrips.map((t) => (
+                  <tr key={t.id} className="hover:bg-white/[0.02] transition">
+                    <td className="py-3 text-amber-400 font-mono text-xs">
+                      {t.id}
+                    </td>
+                    <td className="py-3 text-white text-xs font-medium">
+                      {t.crew}
+                    </td>
+                    <td className="py-3 text-slate-400 text-xs hidden md:table-cell">
+                      {t.route}
+                    </td>
+                    <td className="py-3 text-slate-400 text-xs hidden sm:table-cell">
+                      {t.date}
+                    </td>
+                    <td className="py-3 text-right text-white text-xs font-semibold">
+                      {t.fare}
+                    </td>
+                    <td className="py-3 text-right">
+                      <span
+                        className={`inline-block px-2 py-1 rounded-lg text-xs font-semibold ${
+                          statusStyle[t.status]
+                        }`}
+                      >
+                        {t.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Top zones */}
+        <div className="bg-[#131929] rounded-2xl border border-[#1e2a3a] p-5">
+          <h2 className="text-sm font-semibold text-white mb-4">
+            Top zones
+          </h2>
+          <div className="space-y-4">
+            {topZones.map((z) => (
+              <div key={z.name}>
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-xs text-white font-medium">{z.name}</p>
+                  <p className="text-xs text-slate-400">{z.trips} trips</p>
+                </div>
+                <div className="w-full h-1.5 bg-[#0a0f1e] rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-amber-500 rounded-full transition-all duration-500"
+                    style={{ width: `${z.pct}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-6 pt-4 border-t border-[#1e2a3a]">
+            <h3 className="text-xs text-slate-500 uppercase tracking-widest mb-3 font-semibold">
+              Quick exports
+            </h3>
+            {["Trips report", "Revenue report", "Crew activity"].map((label) => (
+              <button
+                key={label}
+                className="flex items-center justify-between w-full py-2.5 px-3 mb-2 rounded-xl bg-[#0a0f1e] border border-[#1e2a3a] hover:border-amber-500/40 transition group"
+              >
+                <span className="text-xs text-slate-300 group-hover:text-white transition">
+                  {label}
+                </span>
+                <svg
+                  className="w-3.5 h-3.5 text-amber-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                  />
+                </svg>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="app/dashboard/settings/page.tsx">
+"use client";
+
+import { useState } from "react";
+
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+interface ToggleSetting {
+  key: string;
+  label: string;
+  description: string;
+}
+
+// ─── Data ────────────────────────────────────────────────────────────────────
+
+const notificationToggles: ToggleSetting[] = [
+  {
+    key: "email_new_booking",
+    label: "New booking alerts",
+    description: "Email when a new trip is booked",
+  },
+  {
+    key: "email_cancellation",
+    label: "Cancellation alerts",
+    description: "Email when a trip is cancelled",
+  },
+  {
+    key: "email_weekly_report",
+    label: "Weekly summary",
+    description: "Weekly performance digest every Monday",
+  },
+  {
+    key: "push_new_operator",
+    label: "New operator signup",
+    description: "Push alert when a new operator registers",
+  },
+];
+
+const platformToggles: ToggleSetting[] = [
+  {
+    key: "maintenance_mode",
+    label: "Maintenance mode",
+    description: "Temporarily suspend new bookings across the platform",
+  },
+  {
+    key: "surge_pricing",
+    label: "Surge pricing",
+    description: "Enable dynamic pricing during peak demand",
+  },
+  {
+    key: "guest_booking",
+    label: "Guest bookings",
+    description: "Allow bookings without a registered account",
+  },
+  {
+    key: "auto_assign",
+    label: "Auto-assign operators",
+    description: "Automatically match trips to the nearest available operator",
+  },
+];
+
+// ─── Subcomponents ───────────────────────────────────────────────────────────
+
+function SectionHeader({ eyebrow, title }: { eyebrow: string; title: string }) {
+  return (
+    <div className="mb-3">
+      <p className="text-xs text-amber-400 font-semibold tracking-widest uppercase mb-0.5">
+        {eyebrow}
+      </p>
+      <h2 className="text-base font-semibold text-white">{title}</h2>
+    </div>
+  );
+}
+
+function Toggle({
+  value,
+  onChange,
+  danger,
+}: {
+  value: boolean;
+  onChange: (v: boolean) => void;
+  danger?: boolean;
+}) {
+  return (
+    <button
+      onClick={() => onChange(!value)}
+      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none ${
+        value
+          ? danger
+            ? "bg-red-500"
+            : "bg-amber-500"
+          : "bg-[#1e2a3a]"
+      }`}
+    >
+      <span
+        className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-200 ${
+          value ? "translate-x-6" : "translate-x-1"
+        }`}
+      />
+    </button>
+  );
+}
+
+function ToggleRow({
+  label,
+  description,
+  value,
+  onChange,
+  danger,
+}: {
+  label: string;
+  description: string;
+  value: boolean;
+  onChange: (v: boolean) => void;
+  danger?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between py-4 border-b border-[#1e2a3a] last:border-0">
+      <div className="pr-4">
+        <p className={`text-sm font-medium ${danger ? "text-red-400" : "text-white"}`}>
+          {label}
+        </p>
+        <p className="text-xs text-slate-400 mt-0.5">{description}</p>
+      </div>
+      <Toggle value={value} onChange={onChange} danger={danger} />
+    </div>
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
+export default function SettingsPage() {
+  const [toggles, setToggles] = useState<Record<string, boolean>>({
+    email_new_booking: true,
+    email_cancellation: true,
+    email_weekly_report: true,
+    push_new_operator: false,
+    maintenance_mode: false,
+    surge_pricing: true,
+    guest_booking: false,
+    auto_assign: true,
+  });
+
+  const [supportEmail, setSupportEmail] = useState("support@aerocrew.my");
+  const [minNotice, setMinNotice] = useState("60");
+  const [maxRadius, setMaxRadius] = useState("50");
+  const [commissionPct, setCommissionPct] = useState("15");
+  const [saved, setSaved] = useState(false);
+
+  const setToggle = (key: string) => (value: boolean) =>
+    setToggles((prev) => ({ ...prev, [key]: value }));
+
+  const handleSave = () => {
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
+  };
+
+  return (
+    <div className="min-h-screen bg-[#0a0f1e] text-white p-6 pb-16">
+      {/* Page header */}
+      <div className="mb-8">
+        <p className="text-xs text-amber-400 font-semibold tracking-widest uppercase mb-1">
+          Admin
+        </p>
+        <h1 className="text-2xl font-bold text-white">Settings</h1>
+        <p className="text-sm text-slate-400 mt-1">
+          Configure the AeroCrew platform
+        </p>
+      </div>
+
+      <div className="max-w-2xl space-y-8">
+        {/* ── General ── */}
+        <section>
+          <SectionHeader eyebrow="General" title="Platform configuration" />
+          <div className="bg-[#131929] rounded-2xl border border-[#1e2a3a] p-5 space-y-4">
+            {[
+              {
+                label: "Support email",
+                value: supportEmail,
+                set: setSupportEmail,
+                type: "email",
+                placeholder: "support@aerocrew.my",
+              },
+              {
+                label: "Minimum booking notice (mins)",
+                value: minNotice,
+                set: setMinNotice,
+                type: "number",
+                placeholder: "60",
+              },
+              {
+                label: "Max operator radius (km)",
+                value: maxRadius,
+                set: setMaxRadius,
+                type: "number",
+                placeholder: "50",
+              },
+              {
+                label: "Platform commission (%)",
+                value: commissionPct,
+                set: setCommissionPct,
+                type: "number",
+                placeholder: "15",
+              },
+            ].map((f) => (
+              <div key={f.label}>
+                <label className="block text-xs text-slate-400 mb-1.5 font-medium">
+                  {f.label}
+                </label>
+                <input
+                  type={f.type}
+                  value={f.value}
+                  onChange={(e) => f.set(e.target.value)}
+                  placeholder={f.placeholder}
+                  className="w-full bg-[#0a0f1e] border border-[#1e2a3a] rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-amber-500 transition"
+                />
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── Platform toggles ── */}
+        <section>
+          <SectionHeader eyebrow="Platform" title="Feature flags" />
+          <div className="bg-[#131929] rounded-2xl border border-[#1e2a3a] px-5">
+            {platformToggles.map((t) => (
+              <ToggleRow
+                key={t.key}
+                label={t.label}
+                description={t.description}
+                value={toggles[t.key]}
+                onChange={setToggle(t.key)}
+                danger={t.key === "maintenance_mode"}
+              />
+            ))}
+          </div>
+        </section>
+
+        {/* ── Notifications ── */}
+        <section>
+          <SectionHeader eyebrow="Notifications" title="Alert preferences" />
+          <div className="bg-[#131929] rounded-2xl border border-[#1e2a3a] px-5">
+            {notificationToggles.map((t) => (
+              <ToggleRow
+                key={t.key}
+                label={t.label}
+                description={t.description}
+                value={toggles[t.key]}
+                onChange={setToggle(t.key)}
+              />
+            ))}
+          </div>
+        </section>
+
+        {/* ── Danger zone ── */}
+        <section>
+          <SectionHeader eyebrow="Danger zone" title="Destructive actions" />
+          <div className="bg-[#131929] rounded-2xl border border-red-500/20 p-5 space-y-3">
+            {[
+              { label: "Clear trip cache", desc: "Flush all cached trip data" },
+              { label: "Reset zone pricing", desc: "Revert all zones to default rates" },
+            ].map((action) => (
+              <div
+                key={action.label}
+                className="flex items-center justify-between py-2"
+              >
+                <div>
+                  <p className="text-sm font-medium text-red-400">
+                    {action.label}
+                  </p>
+                  <p className="text-xs text-slate-500 mt-0.5">{action.desc}</p>
+                </div>
+                <button className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-red-500/40 text-red-400 hover:bg-red-500/10 transition">
+                  Run
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── Save button ── */}
+        <button
+          onClick={handleSave}
+          className={`w-full py-4 rounded-2xl font-semibold text-sm transition-all ${
+            saved
+              ? "bg-emerald-500 text-white"
+              : "bg-amber-500 hover:bg-amber-400 text-white"
+          }`}
+        >
+          {saved ? "✓ Changes saved" : "Save settings"}
+        </button>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="app/dashboard/leaderboard/page.tsx">
+'use client'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
+
+const DEMO_OPERATORS = [
+  { id: 1, name: 'Ahmad Hassan', vehicle: 'Toyota Hiace', zone: 'PJ · Subang', trips: 87, rating: 4.9, earnings: 7830, onTime: 98, status: 'verified' },
+  { id: 2, name: 'Rahman Drivers', vehicle: 'Toyota Alphard', zone: 'Damansara', trips: 72, rating: 4.8, earnings: 6480, onTime: 96, status: 'verified' },
+  { id: 3, name: 'Khairul Transport', vehicle: 'Nissan Serena', zone: 'Shah Alam', trips: 61, rating: 4.7, earnings: 5490, onTime: 94, status: 'verified' },
+  { id: 4, name: 'Farouk Van Services', vehicle: 'Toyota Hiace', zone: 'Cyberjaya', trips: 54, rating: 4.6, earnings: 4860, onTime: 93, status: 'verified' },
+  { id: 5, name: 'Asyraf Transport', vehicle: 'Honda Odyssey', zone: 'Nilai', trips: 48, rating: 4.5, earnings: 4320, onTime: 91, status: 'verified' },
+]
+
+export default function LeaderboardPage() {
+  const router = useRouter()
+  const [metric, setMetric] = useState<'trips' | 'rating' | 'earnings' | 'onTime'>('trips')
+  const [operators, setOperators] = useState(DEMO_OPERATORS)
+
+  useEffect(() => {
+    const auth = localStorage.getItem('aerocrew_admin_auth')
+    if (!auth) { router.push('/'); return }
+  }, [])
+
+  const sorted = [...operators].sort((a, b) => b[metric] - a[metric])
+  const maxValue = Math.max(...sorted.map(o => o[metric]))
+
+  const metricLabel = { trips: 'Total trips', rating: 'Avg rating', earnings: 'Earnings (RM)', onTime: 'On-time %' }
+  const metricFormat = (op: typeof operators[0]) => {
+    switch (metric) {
+      case 'rating': return op[metric].toFixed(1)
+      case 'earnings': return `RM${op[metric].toLocaleString()}`
+      case 'onTime': return `${op[metric]}%`
+      default: return op[metric].toString()
+    }
+  }
+
+  const medalColor = (i: number) => {
+    if (i === 0) return 'text-yellow-400'
+    if (i === 1) return 'text-gray-400'
+    if (i === 2) return 'text-amber-600'
+    return 'text-[#555]'
+  }
+
+  const medalEmoji = (i: number) => {
+    if (i === 0) return '🥇'
+    if (i === 1) return '🥈'
+    if (i === 2) return '🥉'
+    return `#${i + 1}`
+  }
+
+  return (
+    <main className="min-h-screen bg-[#0A0E1A]">
+      <header className="bg-[#1C2333] border-b border-[#2A3347] px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center gap-3">
+          <button
+            onClick={() => router.push('/dashboard')}
+            className="w-8 h-8 bg-[#0A0E1A] rounded-lg border border-[#2A3347] flex items-center justify-center text-white hover:bg-[#2A3347] transition-colors text-sm"
+          >←</button>
+          <span className="text-white font-semibold">Operator leaderboard</span>
+        </div>
+      </header>
+
+      <div className="max-w-4xl mx-auto px-6 py-8">
+        <div className="flex gap-2 mb-8 flex-wrap">
+          {(Object.keys(metricLabel) as Array<keyof typeof metricLabel>).map(m => (
+            <button
+              key={m}
+              onClick={() => setMetric(m)}
+              className={`px-4 py-2 rounded-xl text-sm font-medium border transition-colors ${
+                metric === m
+                  ? 'bg-[#BA7517] text-white border-[#BA7517]'
+                  : 'bg-[#1C2333] text-[#888] border-[#2A3347] hover:text-white'
+              }`}
+            >
+              {metricLabel[m]}
+            </button>
+          ))}
+        </div>
+
+        <div className="space-y-4">
+          {sorted.map((op, i) => {
+            const ratio = op[metric] / maxValue
+            return (
+              <div key={op.id} className={`bg-[#1C2333] rounded-2xl border p-5 ${i === 0 ? 'border-yellow-500/30' : 'border-[#2A3347]'}`}>
+                <div className="flex items-center gap-4 mb-3">
+                  <div className={`text-2xl font-black w-10 text-center ${medalColor(i)}`}>
+                    {medalEmoji(i)}
+                  </div>
+                  <div className="w-10 h-10 bg-[#BA7517]/20 rounded-xl flex items-center justify-center text-[#BA7517] font-bold">
+                    {op.name.charAt(0)}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-white font-semibold">{op.name}</p>
+                    <p className="text-[#888] text-xs">{op.vehicle} · {op.zone}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className={`text-xl font-bold ${i === 0 ? 'text-yellow-400' : 'text-[#BA7517]'}`}>
+                      {metricFormat(op)}
+                    </p>
+                    <p className="text-[#888] text-xs">{metricLabel[metric]}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-4 gap-2 mb-3">
+                  {[
+                    { label: 'Trips', value: op.trips },
+                    { label: 'Rating', value: op.rating.toFixed(1) },
+                    { label: 'Earnings', value: `RM${(op.earnings / 1000).toFixed(1)}k` },
+                    { label: 'On-time', value: `${op.onTime}%` },
+                  ].map(s => (
+                    <div key={s.label} className="bg-[#0A0E1A] rounded-xl p-2 text-center border border-[#2A3347]">
+                      <p className="text-white text-sm font-semibold">{s.value}</p>
+                      <p className="text-[#555] text-xs">{s.label}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="h-2 bg-[#2A3347] rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all ${i === 0 ? 'bg-yellow-400' : 'bg-[#BA7517]'}`}
+                    style={{ width: `${ratio * 100}%` }}
+                  />
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </main>
+  )
+}
+</file>
+
+<file path="app/dashboard/notifications/page.tsx">
+'use client'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
+
+export default function NotificationsPage() {
+  const router = useRouter()
+  const [title, setTitle] = useState('')
+  const [body, setBody] = useState('')
+  const [audience, setAudience] = useState('all')
+  const [type, setType] = useState('info')
+  const [sending, setSending] = useState(false)
+  const [sent, setSent] = useState(false)
+  const [userCount, setUserCount] = useState(0)
+
+  const history = [
+    { title: 'Welcome to AeroCrew!', body: 'Your account has been verified. Upload your roster to get started.', audience: 'crew', sent: '10 Jun 2026', recipients: 5 },
+    { title: 'New operator in your zone', body: 'A new verified operator now covers Petaling Jaya routes.', audience: 'crew', sent: '8 Jun 2026', recipients: 12 },
+    { title: 'Payout processed', body: 'Your June W1 earnings have been transferred to your account.', audience: 'operators', sent: '16 Jun 2026', recipients: 3 },
+  ]
+
+  useEffect(() => {
+    const auth = localStorage.getItem('aerocrew_admin_auth')
+    if (!auth) { router.push('/'); return }
+    fetchUserCount()
+  }, [audience])
+
+  const fetchUserCount = async () => {
+    try {
+      let query = supabase.from('users').select('id', { count: 'exact' })
+      if (audience === 'crew') query = query.eq('role', 'crew')
+      if (audience === 'operators') query = query.eq('role', 'operator')
+      if (audience === 'verified') query = query.eq('status', 'verified')
+      const { count } = await query
+      setUserCount(count || 0)
+    } catch (e) {
+      setUserCount(0)
+    }
+  }
+
+  const sendNotification = async () => {
+    if (!title || !body) return
+    setSending(true)
+    await new Promise(r => setTimeout(r, 1500))
+    setSending(false)
+    setSent(true)
+    setTitle('')
+    setBody('')
+    setTimeout(() => setSent(false), 3000)
+  }
+
+  const typeColors: Record<string, string> = {
+    info: 'border-blue-500/30 bg-blue-900/10',
+    success: 'border-green-500/30 bg-green-900/10',
+    warning: 'border-amber-500/30 bg-amber-900/10',
+    alert: 'border-red-500/30 bg-red-900/10',
+  }
+
+  return (
+    <main className="min-h-screen bg-[#0A0E1A]">
+      <header className="bg-[#1C2333] border-b border-[#2A3347] px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center gap-3">
+          <button
+            onClick={() => router.push('/dashboard')}
+            className="w-8 h-8 bg-[#0A0E1A] rounded-lg border border-[#2A3347] flex items-center justify-center text-white hover:bg-[#2A3347] transition-colors text-sm"
+          >←</button>
+          <span className="text-white font-semibold">Push notifications</span>
+        </div>
+      </header>
+
+      <div className="max-w-4xl mx-auto px-6 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Composer */}
+          <div className="space-y-4">
+            <h2 className="text-white font-semibold text-lg">Compose notification</h2>
+
+            <div>
+              <label className="text-[#888] text-xs uppercase tracking-wider block mb-2">Audience</label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { id: 'all', label: 'All users' },
+                  { id: 'crew', label: 'Flight crew only' },
+                  { id: 'operators', label: 'Operators only' },
+                  { id: 'verified', label: 'Verified only' },
+                ].map(a => (
+                  <button
+                    key={a.id}
+                    onClick={() => setAudience(a.id)}
+                    className={`px-3 py-2 rounded-xl text-sm border transition-colors ${
+                      audience === a.id
+                        ? 'bg-[#BA7517]/20 text-[#BA7517] border-[#BA7517]/30'
+                        : 'bg-[#1C2333] text-[#888] border-[#2A3347] hover:text-white'
+                    }`}
+                  >
+                    {a.label}
+                    {audience === a.id && userCount > 0 && (
+                      <span className="ml-1 text-xs opacity-70">({userCount})</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[#888] text-xs uppercase tracking-wider block mb-2">Type</label>
+              <div className="flex gap-2">
+                {['info', 'success', 'warning', 'alert'].map(t => (
+                  <button
+                    key={t}
+                    onClick={() => setType(t)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors capitalize ${
+                      type === t ? typeColors[t] + ' text-white' : 'bg-[#1C2333] text-[#888] border-[#2A3347]'
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[#888] text-xs uppercase tracking-wider block mb-2">Title</label>
+              <input
+                value={title}
+                onChange={e => setTitle(e.target.value)}
+                placeholder="Notification title..."
+                className="w-full bg-[#1C2333] border border-[#2A3347] rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#BA7517] placeholder-[#555]"
+              />
+            </div>
+
+            <div>
+              <label className="text-[#888] text-xs uppercase tracking-wider block mb-2">Message</label>
+              <textarea
+                value={body}
+                onChange={e => setBody(e.target.value)}
+                placeholder="Notification message..."
+                rows={4}
+                className="w-full bg-[#1C2333] border border-[#2A3347] rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#BA7517] placeholder-[#555] resize-none"
+              />
+            </div>
+
+            <button
+              onClick={sendNotification}
+              disabled={!title || !body || sending}
+              className="w-full py-3 bg-[#BA7517] hover:bg-[#E8920A] disabled:opacity-40 text-white font-semibold rounded-xl transition-colors"
+            >
+              {sending ? 'Sending...' : sent ? '✓ Sent!' : `Send to ${userCount > 0 ? userCount : 'all'} users`}
+            </button>
+          </div>
+
+          {/* Preview + history */}
+          <div className="space-y-4">
+            <h2 className="text-white font-semibold text-lg">Preview</h2>
+            <div className={`rounded-2xl border p-5 ${typeColors[type]}`}>
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-[#BA7517] rounded-xl flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-white font-semibold text-sm">{title || 'Notification title'}</p>
+                  <p className="text-[#888] text-xs mt-1">{body || 'Your notification message will appear here...'}</p>
+                  <p className="text-[#555] text-xs mt-2">AeroCrew · just now</p>
+                </div>
+              </div>
+            </div>
+
+            <h2 className="text-white font-semibold text-lg pt-2">Sent history</h2>
+            <div className="space-y-3">
+              {history.map((n, i) => (
+                <div key={i} className="bg-[#1C2333] rounded-xl border border-[#2A3347] p-4">
+                  <div className="flex items-start justify-between mb-1">
+                    <p className="text-white text-sm font-medium">{n.title}</p>
+                    <span className="text-[#555] text-xs ml-2 shrink-0">{n.sent}</span>
+                  </div>
+                  <p className="text-[#888] text-xs mb-2">{n.body}</p>
+                  <div className="flex gap-2">
+                    <span className="text-xs px-2 py-0.5 bg-[#2A3347] text-[#888] rounded capitalize">{n.audience}</span>
+                    <span className="text-xs px-2 py-0.5 bg-[#2A3347] text-[#888] rounded">{n.recipients} recipients</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  )
+}
+</file>
+
+<file path="app/dashboard/operations/page.tsx">
+'use client'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+
+const DEMO_OPERATIONS = [
+  {
+    id: 'op1',
+    poolId: 'POOL-001',
+    airport: 'SZB',
+    zone: 'Petaling Jaya',
+    flightTime: '05:30',
+    pickupTime: '03:00',
+    crewCount: 3,
+    operator: 'Ahmad Hassan',
+    vehicle: 'Toyota Hiace · WXY 1234',
+    status: 'in_progress',
+    currentStop: 1,
+    totalStops: 3,
+    etaAirport: '04:05',
+  },
+  {
+    id: 'op2',
+    poolId: 'POOL-002',
+    airport: 'KLIA',
+    zone: 'Shah Alam',
+    flightTime: '07:30',
+    pickupTime: '05:00',
+    crewCount: 2,
+    operator: 'Rahman Drivers',
+    vehicle: 'Toyota Alphard · ABC 5678',
+    status: 'pickup',
+    currentStop: 0,
+    totalStops: 2,
+    etaAirport: '06:10',
+  },
+  {
+    id: 'op3',
+    poolId: 'POOL-003',
+    airport: 'KLIA',
+    zone: 'Damansara',
+    flightTime: '08:00',
+    pickupTime: '05:30',
+    crewCount: 4,
+    operator: 'Pending assignment',
+    vehicle: '—',
+    status: 'unassigned',
+    currentStop: 0,
+    totalStops: 4,
+    etaAirport: '—',
+  },
+  {
+    id: 'op4',
+    poolId: 'POOL-004',
+    airport: 'klia2',
+    zone: 'Cyberjaya',
+    flightTime: '09:00',
+    pickupTime: '06:30',
+    crewCount: 2,
+    operator: 'Ahmad Hassan',
+    vehicle: 'Toyota Hiace · WXY 1234',
+    status: 'scheduled',
+    currentStop: 0,
+    totalStops: 2,
+    etaAirport: '07:45',
+  },
+  {
+    id: 'op5',
+    poolId: 'POOL-005',
+    airport: 'SZB',
+    zone: 'Subang Jaya',
+    flightTime: '06:00',
+    pickupTime: '03:30',
+    crewCount: 3,
+    operator: 'Rahman Drivers',
+    vehicle: 'Toyota Alphard · ABC 5678',
+    status: 'completed',
+    currentStop: 3,
+    totalStops: 3,
+    etaAirport: '04:50',
+  },
+]
+
+export default function OperationsPage() {
+  const router = useRouter()
+  const [ops, setOps] = useState(DEMO_OPERATIONS)
+  const [selectedStatus, setSelectedStatus] = useState('all')
+  const [tick, setTick] = useState(0)
+
+  useEffect(() => {
+    const auth = localStorage.getItem('aerocrew_admin_auth')
+    if (!auth) { router.push('/'); return }
+    const interval = setInterval(() => setTick(t => t + 1), 5000)
+    return () => clearInterval(interval)
+  }, [])
+
+  const filtered = selectedStatus === 'all'
+    ? ops
+    : ops.filter(o => o.status === selectedStatus)
+
+  const getStatusStyle = (status: string) => {
+    switch (status) {
+      case 'in_progress': return 'bg-[#BA7517]/20 text-[#BA7517] border-[#BA7517]/20'
+      case 'pickup': return 'bg-blue-900/30 text-blue-400 border-blue-500/20'
+      case 'scheduled': return 'bg-[#2A3347] text-[#888] border-[#2A3347]'
+      case 'unassigned': return 'bg-red-900/30 text-red-400 border-red-500/20'
+      case 'completed': return 'bg-green-900/30 text-green-400 border-green-500/20'
+      default: return 'bg-gray-900/30 text-gray-400 border-gray-500/20'
+    }
+  }
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'in_progress': return '🚐 In progress'
+      case 'pickup': return '📍 Pickup'
+      case 'scheduled': return '🕐 Scheduled'
+      case 'unassigned': return '⚠️ Unassigned'
+      case 'completed': return '✅ Completed'
+      default: return status
+    }
+  }
+
+  const inProgress = ops.filter(o => o.status === 'in_progress').length
+  const pickupCount = ops.filter(o => o.status === 'pickup').length
+  const unassigned = ops.filter(o => o.status === 'unassigned').length
+  const completed = ops.filter(o => o.status === 'completed').length
+  const totalCrew = ops.reduce((s, o) => s + o.crewCount, 0)
+
+  return (
+    <main className="min-h-screen bg-[#0A0E1A]">
+      <header className="bg-[#1C2333] border-b border-[#2A3347] px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="w-8 h-8 bg-[#0A0E1A] rounded-lg border border-[#2A3347] flex items-center justify-center text-white hover:bg-[#2A3347] transition-colors text-sm"
+            >←</button>
+            <span className="text-white font-semibold">Live operations</span>
+            <div className="flex items-center gap-1.5 bg-[#1D9E75]/10 border border-[#1D9E75]/20 rounded-full px-3 py-1">
+              <div className="w-2 h-2 bg-[#1D9E75] rounded-full animate-pulse"/>
+              <span className="text-[#1D9E75] text-xs font-semibold">Live</span>
+            </div>
+          </div>
+          <span className="text-[#555] text-xs">Auto-refreshes every 5s</span>
+        </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+          {[
+            { label: 'In progress', value: inProgress, color: 'text-[#BA7517]' },
+            { label: 'Pickup phase', value: pickupCount, color: 'text-blue-400' },
+            { label: 'Unassigned', value: unassigned, color: 'text-red-400' },
+            { label: 'Completed today', value: completed, color: 'text-green-400' },
+            { label: 'Total crew', value: totalCrew, color: 'text-white' },
+          ].map(s => (
+            <div key={s.label} className="bg-[#1C2333] rounded-2xl border border-[#2A3347] p-4">
+              <p className="text-[#888] text-xs uppercase tracking-wider mb-1">{s.label}</p>
+              <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
+            </div>
+          ))}
+        </div>
+
+        {unassigned > 0 && (
+          <div className="bg-red-900/20 border border-red-500/30 rounded-2xl p-4 mb-6 flex items-center gap-3">
+            <span className="text-red-400 text-lg">⚠️</span>
+            <div>
+              <p className="text-red-400 font-semibold text-sm">{unassigned} pool{unassigned > 1 ? 's' : ''} need operator assignment</p>
+              <p className="text-red-400/70 text-xs">Assign operators immediately to avoid crew transport failure</p>
+            </div>
+          </div>
+        )}
+
+        <div className="flex gap-2 mb-6 flex-wrap">
+          {['all', 'in_progress', 'pickup', 'unassigned', 'scheduled', 'completed'].map(s => (
+            <button
+              key={s}
+              onClick={() => setSelectedStatus(s)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors ${
+                selectedStatus === s
+                  ? 'bg-[#BA7517] text-white border-[#BA7517]'
+                  : 'bg-[#1C2333] text-[#888] border-[#2A3347] hover:text-white'
+              }`}
+            >
+              {s === 'all' ? `All (${ops.length})` : getStatusLabel(s)}
+            </button>
+          ))}
+        </div>
+
+        <div className="space-y-4">
+          {filtered.map(op => (
+            <div key={op.id} className="bg-[#1C2333] rounded-2xl border border-[#2A3347] p-5">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-white font-semibold">{op.poolId}</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-lg border font-medium ${getStatusStyle(op.status)}`}>
+                      {getStatusLabel(op.status)}
+                    </span>
+                  </div>
+                  <p className="text-[#888] text-sm">{op.zone} → {op.airport} · Flight {op.flightTime}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-white font-semibold">{op.crewCount} crew</p>
+                  <p className="text-[#888] text-xs">Pickup {op.pickupTime}</p>
+                </div>
+              </div>
+
+              {op.status !== 'unassigned' && (
+                <div className="flex items-center gap-3 bg-[#0A0E1A] rounded-xl p-3 mb-4 border border-[#2A3347]">
+                  <div className="w-8 h-8 bg-[#BA7517]/20 rounded-lg flex items-center justify-center text-[#BA7517] text-xs font-bold">
+                    {op.operator.charAt(0)}
+                  </div>
+                  <div>
+                    <p className="text-white text-sm font-medium">{op.operator}</p>
+                    <p className="text-[#888] text-xs">{op.vehicle}</p>
+                  </div>
+                  {op.etaAirport !== '—' && (
+                    <div className="ml-auto text-right">
+                      <p className="text-[#888] text-xs">ETA airport</p>
+                      <p className="text-[#BA7517] font-semibold text-sm">{op.etaAirport}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {op.status === 'unassigned' && (
+                <div className="bg-red-900/10 border border-red-500/20 rounded-xl p-3 mb-4 flex items-center justify-between">
+                  <span className="text-red-400 text-sm">No operator assigned</span>
+                  <button className="px-3 py-1 bg-[#BA7517] text-white text-xs font-semibold rounded-lg">
+                    Assign now
+                  </button>
+                </div>
+              )}
+
+              {(op.status === 'in_progress' || op.status === 'pickup') && (
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <span className="text-[#888] text-xs">Stop {op.currentStop} of {op.totalStops}</span>
+                    <span className="text-[#BA7517] text-xs font-semibold">{Math.round((op.currentStop / op.totalStops) * 100)}%</span>
+                  </div>
+                  <div className="h-2 bg-[#2A3347] rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-[#BA7517] rounded-full transition-all"
+                      style={{ width: `${(op.currentStop / op.totalStops) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </main>
+  )
+}
+</file>
+
+<file path="app/dashboard/reconciliation/page.tsx">
+'use client'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+
+const DEMO_PAYOUTS = [
+  { id: 'PAY-001', operator: 'Ahmad Hassan', period: 'Jun W1 2026', trips: 18, gross: 1620, commission: 243, net: 1377, status: 'paid', date: '16 Jun 2026', bank: 'Maybank · 1234-XXXX' },
+  { id: 'PAY-002', operator: 'Rahman Drivers', period: 'Jun W1 2026', trips: 14, gross: 1960, commission: 294, net: 1666, status: 'paid', date: '16 Jun 2026', bank: 'CIMB · 5678-XXXX' },
+  { id: 'PAY-003', operator: 'Khairul Transport', period: 'Jun W1 2026', trips: 11, gross: 990, commission: 148.5, net: 841.5, status: 'pending', date: '23 Jun 2026', bank: 'Public Bank · 9012-XXXX' },
+  { id: 'PAY-004', operator: 'Farouk Van Services', period: 'Jun W1 2026', trips: 9, gross: 810, commission: 121.5, net: 688.5, status: 'pending', date: '23 Jun 2026', bank: 'RHB · 3456-XXXX' },
+  { id: 'PAY-005', operator: 'Asyraf Transport', period: 'May W4 2026', trips: 16, gross: 1440, commission: 216, net: 1224, status: 'paid', date: '9 Jun 2026', bank: 'Maybank · 7890-XXXX' },
+]
+
+export default function ReconciliationPage() {
+  const router = useRouter()
+  const [payouts, setPayouts] = useState(DEMO_PAYOUTS)
+  const [filter, setFilter] = useState('all')
+
+  useEffect(() => {
+    const auth = localStorage.getItem('aerocrew_admin_auth')
+    if (!auth) { router.push('/'); return }
+  }, [])
+
+  const filtered = filter === 'all' ? payouts : payouts.filter(p => p.status === filter)
+  const totalGross = payouts.reduce((s, p) => s + p.gross, 0)
+  const totalCommission = payouts.reduce((s, p) => s + p.commission, 0)
+  const totalNet = payouts.reduce((s, p) => s + p.net, 0)
+  const pendingAmount = payouts.filter(p => p.status === 'pending').reduce((s, p) => s + p.net, 0)
+
+  const markPaid = (id: string) => {
+    setPayouts(payouts.map(p => p.id === id ? { ...p, status: 'paid', date: new Date().toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' }) } : p))
+  }
+
+  return (
+    <main className="min-h-screen bg-[#0A0E1A]">
+      <header className="bg-[#1C2333] border-b border-[#2A3347] px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center gap-3">
+          <button
+            onClick={() => router.push('/dashboard')}
+            className="w-8 h-8 bg-[#0A0E1A] rounded-lg border border-[#2A3347] flex items-center justify-center text-white hover:bg-[#2A3347] transition-colors text-sm"
+          >←</button>
+          <span className="text-white font-semibold">Financial reconciliation</span>
+        </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          {[
+            { label: 'Total gross', value: `RM${totalGross.toLocaleString()}`, color: 'text-white' },
+            { label: 'Total commission', value: `RM${totalCommission.toLocaleString()}`, color: 'text-[#BA7517]' },
+            { label: 'Operator payouts', value: `RM${Math.round(totalNet).toLocaleString()}`, color: 'text-green-400' },
+            { label: 'Pending payout', value: `RM${Math.round(pendingAmount).toLocaleString()}`, color: 'text-amber-400' },
+          ].map(s => (
+            <div key={s.label} className="bg-[#1C2333] rounded-2xl border border-[#2A3347] p-5">
+              <p className="text-[#888] text-xs uppercase tracking-wider mb-2">{s.label}</p>
+              <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex gap-2 mb-6">
+          {['all', 'pending', 'paid'].map(f => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`px-4 py-2 rounded-xl text-sm font-medium border transition-colors capitalize ${
+                filter === f
+                  ? 'bg-[#BA7517] text-white border-[#BA7517]'
+                  : 'bg-[#1C2333] text-[#888] border-[#2A3347] hover:text-white'
+              }`}
+            >
+              {f === 'all' ? `All (${payouts.length})` : `${f} (${payouts.filter(p => p.status === f).length})`}
+            </button>
+          ))}
+        </div>
+
+        <div className="bg-[#1C2333] rounded-2xl border border-[#2A3347] overflow-hidden">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-[#2A3347]">
+                {['Payout ID', 'Operator', 'Period', 'Trips', 'Gross', 'Commission (15%)', 'Net payout', 'Bank', 'Status', 'Actions'].map(h => (
+                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-[#888] uppercase tracking-wider whitespace-nowrap">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#2A3347]">
+              {filtered.map(p => (
+                <tr key={p.id} className="hover:bg-[#ffffff05]">
+                  <td className="px-4 py-4 text-[#888] text-xs font-mono">{p.id}</td>
+                  <td className="px-4 py-4 text-white text-sm font-medium">{p.operator}</td>
+                  <td className="px-4 py-4 text-[#888] text-xs">{p.period}</td>
+                  <td className="px-4 py-4 text-white text-sm">{p.trips}</td>
+                  <td className="px-4 py-4 text-white text-sm">RM{p.gross.toLocaleString()}</td>
+                  <td className="px-4 py-4 text-[#BA7517] text-sm">−RM{p.commission.toLocaleString()}</td>
+                  <td className="px-4 py-4 text-green-400 text-sm font-semibold">RM{Math.round(p.net).toLocaleString()}</td>
+                  <td className="px-4 py-4 text-[#888] text-xs">{p.bank}</td>
+                  <td className="px-4 py-4">
+                    <span className={`text-xs px-2 py-1 rounded-lg border font-medium ${
+                      p.status === 'paid'
+                        ? 'bg-green-900/30 text-green-400 border-green-500/20'
+                        : 'bg-amber-900/30 text-amber-400 border-amber-500/20'
+                    }`}>
+                      {p.status === 'paid' ? `Paid ${p.date}` : `Due ${p.date}`}
+                    </span>
+                  </td>
+                  <td className="px-4 py-4">
+                    {p.status === 'pending' && (
+                      <button
+                        onClick={() => markPaid(p.id)}
+                        className="px-3 py-1 bg-green-900/30 hover:bg-green-900/50 text-green-400 text-xs font-semibold rounded-lg border border-green-500/20 transition-colors"
+                      >
+                        Mark paid
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  )
+}
+</file>
+
+<file path="app/dashboard/revenue/page.tsx">
+'use client'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
+
+export default function RevenuePage() {
+  const router = useRouter()
+  const [loading, setLoading] = useState(true)
+  const [users, setUsers] = useState<any[]>([])
+  const [selectedMonth, setSelectedMonth] = useState('June 2026')
+
+  const months = ['June 2026', 'May 2026', 'April 2026']
+
+  useEffect(() => {
+    const auth = localStorage.getItem('aerocrew_admin_auth')
+    if (!auth) { router.push('/'); return }
+    fetchData()
+  }, [])
+
+  const fetchData = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .neq('role', 'admin')
+
+    if (error) {
+  console.log("REVENUE SUPABASE ERROR MESSAGE:", error.message)
+  console.log("REVENUE SUPABASE ERROR DETAILS:", error.details)
+  console.log("REVENUE SUPABASE ERROR HINT:", error.hint)
+  console.log("REVENUE SUPABASE ERROR CODE:", error.code)
+  return
+}
+
+    console.log("Users loaded:", data)
+
+    setUsers(data || [])
+
+  } catch (e) {
+    console.error("Fetch failed:", e)
+  } finally {
+    setLoading(false)
+  }
+}
+
+  const crew = users.filter(u => u.role === 'crew')
+  const operators = users.filter(u => u.role === 'operator')
+  const verifiedCrew = crew.filter(u => u.status === 'verified')
+
+  // Simulated revenue based on verified crew
+  const aeroPoolCrew = Math.floor(verifiedCrew.length * 0.7)
+  const aeroFlexCrew = Math.floor(verifiedCrew.length * 0.2)
+  const aeroSoloCrew = Math.floor(verifiedCrew.length * 0.1)
+
+  const aeroPoolGTV = aeroPoolCrew * 750
+  const aeroFlexGTV = aeroFlexCrew * 120
+  const aeroSoloGTV = aeroSoloCrew * 1500
+
+  const totalGTV = aeroPoolGTV + aeroFlexGTV + aeroSoloGTV
+  const totalCommission = (aeroPoolGTV * 0.15) + (aeroFlexGTV * 0.20) + (aeroSoloGTV * 0.175)
+  const operatorPayout = totalGTV - totalCommission
+
+  return (
+    <main className="min-h-screen bg-[#0A0E1A]">
+      <header className="bg-[#1C2333] border-b border-[#2A3347] px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="w-8 h-8 bg-[#0A0E1A] rounded-lg border border-[#2A3347] flex items-center justify-center text-white hover:bg-[#2A3347] transition-colors text-sm"
+            >
+              ←
+            </button>
+            <span className="text-white font-semibold">Revenue analytics</span>
+          </div>
+          <select
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+            className="bg-[#1C2333] border border-[#2A3347] rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-[#BA7517]"
+          >
+            {months.map(m => (
+              <option key={m} value={m}>{m}</option>
+            ))}
+          </select>
+        </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Top stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          {[
+            { label: 'Gross transaction value', value: `RM${totalGTV.toLocaleString()}`, color: 'text-white', sub: selectedMonth },
+            { label: 'AeroCrew commission', value: `RM${Math.round(totalCommission).toLocaleString()}`, color: 'text-[#BA7517]', sub: `${((totalCommission/totalGTV)*100).toFixed(1)}% avg` },
+            { label: 'Operator payouts', value: `RM${Math.round(operatorPayout).toLocaleString()}`, color: 'text-green-400', sub: `${operators.length} operators` },
+            { label: 'Active subscribers', value: verifiedCrew.length.toString(), color: 'text-blue-400', sub: `${crew.length} total crew` },
+          ].map(stat => (
+            <div key={stat.label} className="bg-[#1C2333] rounded-2xl border border-[#2A3347] p-5">
+              <p className="text-[#888] text-xs font-semibold uppercase tracking-wider mb-2">{stat.label}</p>
+              <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
+              <p className="text-[#555] text-xs mt-1">{stat.sub}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Product breakdown */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {[
+            {
+              product: 'AeroPool',
+              color: '#BA7517',
+              bgColor: 'bg-[#BA7517]/10',
+              borderColor: 'border-[#BA7517]/20',
+              crew: aeroPoolCrew,
+              pricePerCrew: 750,
+              gtv: aeroPoolGTV,
+              commission: aeroPoolGTV * 0.15,
+              commissionRate: '15%',
+            },
+            {
+              product: 'AeroFlex',
+              color: '#378ADD',
+              bgColor: 'bg-[#378ADD]/10',
+              borderColor: 'border-[#378ADD]/20',
+              crew: aeroFlexCrew,
+              pricePerCrew: 120,
+              gtv: aeroFlexGTV,
+              commission: aeroFlexGTV * 0.20,
+              commissionRate: '20%',
+            },
+            {
+              product: 'AeroSolo',
+              color: '#EF9F27',
+              bgColor: 'bg-[#EF9F27]/10',
+              borderColor: 'border-[#EF9F27]/20',
+              crew: aeroSoloCrew,
+              pricePerCrew: 1500,
+              gtv: aeroSoloGTV,
+              commission: aeroSoloGTV * 0.175,
+              commissionRate: '17.5%',
+            },
+          ].map(p => (
+            <div key={p.product} className={`${p.bgColor} rounded-2xl border ${p.borderColor} p-5`}>
+              <h3 className="font-bold text-lg mb-4" style={{ color: p.color }}>{p.product}</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-[#888] text-sm">Active crew</span>
+                  <span className="text-white font-semibold">{p.crew}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#888] text-sm">Avg per crew</span>
+                  <span className="text-white font-semibold">RM{p.pricePerCrew}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#888] text-sm">GTV</span>
+                  <span className="text-white font-semibold">RM{p.gtv.toLocaleString()}</span>
+                </div>
+                <div className="h-px bg-[#2A3347]"/>
+                <div className="flex justify-between">
+                  <span className="text-[#888] text-sm">Commission ({p.commissionRate})</span>
+                  <span className="font-bold" style={{ color: p.color }}>RM{Math.round(p.commission).toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Year 1 projection */}
+        <div className="bg-[#1C2333] rounded-2xl border border-[#2A3347] p-6">
+          <h3 className="text-white font-semibold mb-6">Year 1 projection (target: 300 crew)</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-[#2A3347]">
+                  {['Month', 'Active crew', 'GTV', 'Commission', 'Operators', 'Status'].map(h => (
+                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-[#888] uppercase tracking-wider">
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#2A3347]">
+                {[
+                  { month: 'Jun 2026', crew: verifiedCrew.length, status: 'current' },
+                  { month: 'Jul 2026', crew: Math.min(verifiedCrew.length + 20, 300), status: 'projected' },
+                  { month: 'Aug 2026', crew: Math.min(verifiedCrew.length + 50, 300), status: 'projected' },
+                  { month: 'Sep 2026', crew: Math.min(verifiedCrew.length + 90, 300), status: 'projected' },
+                  { month: 'Oct 2026', crew: Math.min(verifiedCrew.length + 140, 300), status: 'projected' },
+                  { month: 'Nov 2026', crew: Math.min(verifiedCrew.length + 200, 300), status: 'projected' },
+                  { month: 'Dec 2026', crew: 300, status: 'target' },
+                ].map(row => {
+                  const rowGTV = row.crew * 750
+                  const rowComm = rowGTV * 0.15
+                  const rowOps = Math.ceil(row.crew / 8)
+                  return (
+                    <tr key={row.month} className={`hover:bg-[#ffffff05] ${row.status === 'current' ? 'bg-[#BA7517]/5' : ''}`}>
+                      <td className="px-4 py-3 text-white text-sm font-medium">{row.month}</td>
+                      <td className="px-4 py-3 text-white text-sm">{row.crew}</td>
+                      <td className="px-4 py-3 text-[#888] text-sm">RM{rowGTV.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-[#BA7517] text-sm font-medium">RM{Math.round(rowComm).toLocaleString()}</td>
+                      <td className="px-4 py-3 text-[#888] text-sm">{rowOps}</td>
+                      <td className="px-4 py-3">
+                        <span className={`text-xs px-2 py-1 rounded-lg border font-medium ${
+                          row.status === 'current'
+                            ? 'bg-[#BA7517]/20 text-[#BA7517] border-[#BA7517]/20'
+                            : row.status === 'target'
+                            ? 'bg-green-900/30 text-green-400 border-green-500/20'
+                            : 'bg-[#2A3347] text-[#888] border-[#2A3347]'
+                        }`}>
+                          {row.status}
+                        </span>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  )
+}
+</file>
+
+<file path="app/dashboard/user/[id]/page.tsx">
+'use client'
+import { useState, useEffect } from 'react'
+import { useRouter, useParams } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
+
+interface User {
+  id: string
+  name: string
+  email: string
+  phone?: string
+  role: string
+  status: string
+  airline?: string
+  base_airport?: string
+  home_zone?: string
+  staff_id?: string
+  company_name?: string
+  vehicle_type?: string
+  plate_number?: string
+  coverage_zones?: string
+  capacity?: number
+  product?: string
+  created_at: string
+}
+
+export default function UserDetail() {
+  const router = useRouter()
+  const params = useParams()
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [updating, setUpdating] = useState(false)
+
+  useEffect(() => {
+    const auth = localStorage.getItem('aerocrew_admin_auth')
+    if (!auth) { router.push('/'); return }
+    fetchUser()
+  }, [])
+
+  const fetchUser = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', params.id)
+        .single()
+      if (error) throw error
+      setUser(data)
+    } catch (e) {
+      console.error(e)
+    }
+    setLoading(false)
+  }
+
+  const updateStatus = async (status: string) => {
+    if (!user) return
+    setUpdating(true)
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ status, updated_at: new Date().toISOString() })
+        .eq('id', user.id)
+      if (error) throw error
+      setUser({ ...user, status })
+    } catch (e) {
+      console.error(e)
+    }
+    setUpdating(false)
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'verified': return 'bg-green-900/30 text-green-400 border-green-500/20'
+      case 'pending_verification':
+      case 'pending': return 'bg-amber-900/30 text-amber-400 border-amber-500/20'
+      case 'suspended': return 'bg-red-900/30 text-red-400 border-red-500/20'
+      case 'rejected': return 'bg-red-900/30 text-red-400 border-red-500/20'
+      default: return 'bg-gray-900/30 text-gray-400 border-gray-500/20'
+    }
+  }
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-[#0A0E1A] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-[#BA7517] border-t-transparent rounded-full animate-spin"/>
+      </main>
+    )
+  }
+
+  if (!user) {
+    return (
+      <main className="min-h-screen bg-[#0A0E1A] flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-white text-lg font-semibold mb-2">User not found</p>
+          <button onClick={() => router.back()} className="text-[#BA7517] text-sm">← Go back</button>
+        </div>
+      </main>
+    )
+  }
+
+  return (
+    <main className="min-h-screen bg-[#0A0E1A]">
+      <header className="bg-[#1C2333] border-b border-[#2A3347] px-6 py-4">
+        <div className="max-w-4xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.back()}
+              className="w-8 h-8 bg-[#0A0E1A] rounded-lg border border-[#2A3347] flex items-center justify-center text-white hover:bg-[#2A3347] transition-colors"
+            >
+              ←
+            </button>
+            <span className="text-white font-semibold">User detail</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className={`text-xs px-3 py-1 rounded-lg font-medium border ${getStatusColor(user.status)}`}>
+              {user.status.replace('_', ' ')}
+            </span>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-4xl mx-auto px-6 py-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Profile card */}
+        <div className="md:col-span-1">
+          <div className="bg-[#1C2333] rounded-2xl border border-[#2A3347] p-6 text-center mb-6">
+            <div className="w-16 h-16 bg-[#BA7517]/20 rounded-2xl flex items-center justify-center text-[#BA7517] text-2xl font-bold mx-auto mb-4">
+              {user.name?.charAt(0) || '?'}
+            </div>
+            <h2 className="text-white font-bold text-lg">{user.name}</h2>
+            <p className="text-[#888] text-sm mt-1">{user.email}</p>
+            {user.phone && <p className="text-[#888] text-sm">{user.phone}</p>}
+            <div className="mt-3">
+              <span className={`text-xs px-2 py-1 rounded-lg font-medium border ${
+                user.role === 'crew'
+                  ? 'bg-blue-900/30 text-blue-400 border-blue-500/20'
+                  : 'bg-amber-900/30 text-amber-400 border-amber-500/20'
+              }`}>
+                {user.role === 'crew' ? 'Flight crew' : 'Van operator'}
+              </span>
+            </div>
+            <p className="text-[#555] text-xs mt-4">
+              Joined {new Date(user.created_at).toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' })}
+            </p>
+          </div>
+
+          {/* Actions */}
+          <div className="bg-[#1C2333] rounded-2xl border border-[#2A3347] p-4 space-y-2">
+            <p className="text-[#888] text-xs font-semibold uppercase tracking-wider mb-3">Actions</p>
+            {(user.status === 'pending' || user.status === 'pending_verification') && (
+              <>
+                <button
+                  onClick={() => updateStatus('verified')}
+                  disabled={updating}
+                  className="w-full py-2 bg-green-900/30 hover:bg-green-900/50 text-green-400 text-sm font-semibold rounded-xl border border-green-500/20 transition-colors disabled:opacity-50"
+                >
+                  {updating ? 'Updating...' : 'Approve'}
+                </button>
+                <button
+                  onClick={() => updateStatus('rejected')}
+                  disabled={updating}
+                  className="w-full py-2 bg-red-900/30 hover:bg-red-900/50 text-red-400 text-sm font-semibold rounded-xl border border-red-500/20 transition-colors disabled:opacity-50"
+                >
+                  Reject
+                </button>
+              </>
+            )}
+            {user.status === 'verified' && (
+              <button
+                onClick={() => updateStatus('suspended')}
+                disabled={updating}
+                className="w-full py-2 bg-[#0A0E1A] hover:bg-[#2A3347] text-[#888] text-sm font-semibold rounded-xl border border-[#2A3347] transition-colors disabled:opacity-50"
+              >
+                Suspend account
+              </button>
+            )}
+            {user.status === 'suspended' && (
+              <button
+                onClick={() => updateStatus('verified')}
+                disabled={updating}
+                className="w-full py-2 bg-green-900/30 hover:bg-green-900/50 text-green-400 text-sm font-semibold rounded-xl border border-green-500/20 transition-colors disabled:opacity-50"
+              >
+                Reinstate
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Details */}
+        <div className="md:col-span-2 space-y-6">
+          {user.role === 'crew' && (
+            <div className="bg-[#1C2333] rounded-2xl border border-[#2A3347] p-6">
+              <h3 className="text-white font-semibold mb-4">Crew details</h3>
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { label: 'Airline', value: user.airline },
+                  { label: 'Base airport', value: user.base_airport },
+                  { label: 'Home zone', value: user.home_zone },
+                  { label: 'Staff ID', value: user.staff_id },
+                  { label: 'Product', value: user.product?.toUpperCase() },
+                ].map(item => (
+                  <div key={item.label}>
+                    <p className="text-[#888] text-xs uppercase tracking-wider mb-1">{item.label}</p>
+                    <p className="text-white text-sm font-medium">{item.value || '—'}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {user.role === 'operator' && (
+            <div className="bg-[#1C2333] rounded-2xl border border-[#2A3347] p-6">
+              <h3 className="text-white font-semibold mb-4">Operator details</h3>
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { label: 'Company name', value: user.company_name },
+                  { label: 'Vehicle type', value: user.vehicle_type },
+                  { label: 'Plate number', value: user.plate_number },
+                  { label: 'Capacity', value: user.capacity ? `${user.capacity} passengers` : undefined },
+                  { label: 'Coverage zones', value: user.coverage_zones },
+                ].map(item => (
+                  <div key={item.label}>
+                    <p className="text-[#888] text-xs uppercase tracking-wider mb-1">{item.label}</p>
+                    <p className="text-white text-sm font-medium">{item.value || '—'}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Documents placeholder */}
+          <div className="bg-[#1C2333] rounded-2xl border border-[#2A3347] p-6">
+            <h3 className="text-white font-semibold mb-4">
+              {user.role === 'crew' ? 'Staff ID verification' : 'Submitted documents'}
+            </h3>
+            <div className="space-y-3">
+              {user.role === 'operator' ? (
+                ['SSM Certificate', 'PSV Licence', 'Operator Permit', 'Vehicle Insurance'].map(doc => (
+                  <div key={doc} className="flex items-center justify-between bg-[#0A0E1A] rounded-xl p-3 border border-[#2A3347]">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-[#E6F1FB]/10 rounded-lg flex items-center justify-center text-[#378ADD] text-xs">📄</div>
+                      <span className="text-white text-sm">{doc}</span>
+                    </div>
+                    <span className={`text-xs px-2 py-1 rounded-lg border ${
+                      user.status === 'verified'
+                        ? 'bg-green-900/30 text-green-400 border-green-500/20'
+                        : 'bg-amber-900/30 text-amber-400 border-amber-500/20'
+                    }`}>
+                      {user.status === 'verified' ? 'Verified' : 'Pending'}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div className="flex items-center justify-between bg-[#0A0E1A] rounded-xl p-3 border border-[#2A3347]">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-[#E6F1FB]/10 rounded-lg flex items-center justify-center text-[#378ADD] text-xs">🪪</div>
+                    <span className="text-white text-sm">Staff ID photo</span>
+                  </div>
+                  <span className={`text-xs px-2 py-1 rounded-lg border ${
+                    user.status === 'verified'
+                      ? 'bg-green-900/30 text-green-400 border-green-500/20'
+                      : 'bg-amber-900/30 text-amber-400 border-amber-500/20'
+                  }`}>
+                    {user.status === 'verified' ? 'Verified' : 'Pending'}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  )
+}
+</file>
+
+<file path="app/layout.tsx">
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+export const metadata: Metadata = {
+  title: "AeroCrew Admin",
+  description: "AeroCrew internal operations dashboard",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html
+      lang="en"
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+    >
+      <body className="min-h-full flex flex-col">{children}</body>
+    </html>
+  );
+}
+</file>
+
+<file path="eslint.config.mjs">
+import { defineConfig, globalIgnores } from "eslint/config";
+import nextVitals from "eslint-config-next/core-web-vitals";
+import nextTs from "eslint-config-next/typescript";
+
+const eslintConfig = defineConfig([
+  ...nextVitals,
+  ...nextTs,
+  // Override default ignores of eslint-config-next.
+  globalIgnores([
+    // Default ignores of eslint-config-next:
+    ".next/**",
+    "out/**",
+    "build/**",
+    "next-env.d.ts",
+  ]),
+]);
+
+export default eslintConfig;
+</file>
+
+<file path="lib/supabase.ts">
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+</file>
+
+<file path="next.config.ts">
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  /* config options here */
+  reactCompiler: true,
+};
+
+export default nextConfig;
+</file>
+
+<file path="postcss.config.mjs">
+const config = {
+  plugins: {
+    "@tailwindcss/postcss": {},
+  },
+};
+
+export default config;
+</file>
+
+<file path="public/file.svg">
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path d="M14.5 13.5V5.41a1 1 0 0 0-.3-.7L9.8.29A1 1 0 0 0 9.08 0H1.5v13.5A2.5 2.5 0 0 0 4 16h8a2.5 2.5 0 0 0 2.5-2.5m-1.5 0v-7H8v-5H3v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1M9.5 5V2.12L12.38 5zM5.13 5h-.62v1.25h2.12V5zm-.62 3h7.12v1.25H4.5zm.62 3h-.62v1.25h7.12V11z" clip-rule="evenodd" fill="#666" fill-rule="evenodd"/></svg>
+</file>
+
+<file path="public/globe.svg">
+<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><g clip-path="url(#a)"><path fill-rule="evenodd" clip-rule="evenodd" d="M10.27 14.1a6.5 6.5 0 0 0 3.67-3.45q-1.24.21-2.7.34-.31 1.83-.97 3.1M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m.48-1.52a7 7 0 0 1-.96 0H7.5a4 4 0 0 1-.84-1.32q-.38-.89-.63-2.08a40 40 0 0 0 3.92 0q-.25 1.2-.63 2.08a4 4 0 0 1-.84 1.31zm2.94-4.76q1.66-.15 2.95-.43a7 7 0 0 0 0-2.58q-1.3-.27-2.95-.43a18 18 0 0 1 0 3.44m-1.27-3.54a17 17 0 0 1 0 3.64 39 39 0 0 1-4.3 0 17 17 0 0 1 0-3.64 39 39 0 0 1 4.3 0m1.1-1.17q1.45.13 2.69.34a6.5 6.5 0 0 0-3.67-3.44q.65 1.26.98 3.1M8.48 1.5l.01.02q.41.37.84 1.31.38.89.63 2.08a40 40 0 0 0-3.92 0q.25-1.2.63-2.08a4 4 0 0 1 .85-1.32 7 7 0 0 1 .96 0m-2.75.4a6.5 6.5 0 0 0-3.67 3.44 29 29 0 0 1 2.7-.34q.31-1.83.97-3.1M4.58 6.28q-1.66.16-2.95.43a7 7 0 0 0 0 2.58q1.3.27 2.95.43a18 18 0 0 1 0-3.44m.17 4.71q-1.45-.12-2.69-.34a6.5 6.5 0 0 0 3.67 3.44q-.65-1.27-.98-3.1" fill="#666"/></g><defs><clipPath id="a"><path fill="#fff" d="M0 0h16v16H0z"/></clipPath></defs></svg>
+</file>
+
+<file path="public/next.svg">
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 394 80"><path fill="#000" d="M262 0h68.5v12.7h-27.2v66.6h-13.6V12.7H262V0ZM149 0v12.7H94v20.4h44.3v12.6H94v21h55v12.6H80.5V0h68.7zm34.3 0h-17.8l63.8 79.4h17.9l-32-39.7 32-39.6h-17.9l-23 28.6-23-28.6zm18.3 56.7-9-11-27.1 33.7h17.8l18.3-22.7z"/><path fill="#000" d="M81 79.3 17 0H0v79.3h13.6V17l50.2 62.3H81Zm252.6-.4c-1 0-1.8-.4-2.5-1s-1.1-1.6-1.1-2.6.3-1.8 1-2.5 1.6-1 2.6-1 1.8.3 2.5 1a3.4 3.4 0 0 1 .6 4.3 3.7 3.7 0 0 1-3 1.8zm23.2-33.5h6v23.3c0 2.1-.4 4-1.3 5.5a9.1 9.1 0 0 1-3.8 3.5c-1.6.8-3.5 1.3-5.7 1.3-2 0-3.7-.4-5.3-1s-2.8-1.8-3.7-3.2c-.9-1.3-1.4-3-1.4-5h6c.1.8.3 1.6.7 2.2s1 1.2 1.6 1.5c.7.4 1.5.5 2.4.5 1 0 1.8-.2 2.4-.6a4 4 0 0 0 1.6-1.8c.3-.8.5-1.8.5-3V45.5zm30.9 9.1a4.4 4.4 0 0 0-2-3.3 7.5 7.5 0 0 0-4.3-1.1c-1.3 0-2.4.2-3.3.5-.9.4-1.6 1-2 1.6a3.5 3.5 0 0 0-.3 4c.3.5.7.9 1.3 1.2l1.8 1 2 .5 3.2.8c1.3.3 2.5.7 3.7 1.2a13 13 0 0 1 3.2 1.8 8.1 8.1 0 0 1 3 6.5c0 2-.5 3.7-1.5 5.1a10 10 0 0 1-4.4 3.5c-1.8.8-4.1 1.2-6.8 1.2-2.6 0-4.9-.4-6.8-1.2-2-.8-3.4-2-4.5-3.5a10 10 0 0 1-1.7-5.6h6a5 5 0 0 0 3.5 4.6c1 .4 2.2.6 3.4.6 1.3 0 2.5-.2 3.5-.6 1-.4 1.8-1 2.4-1.7a4 4 0 0 0 .8-2.4c0-.9-.2-1.6-.7-2.2a11 11 0 0 0-2.1-1.4l-3.2-1-3.8-1c-2.8-.7-5-1.7-6.6-3.2a7.2 7.2 0 0 1-2.4-5.7 8 8 0 0 1 1.7-5 10 10 0 0 1 4.3-3.5c2-.8 4-1.2 6.4-1.2 2.3 0 4.4.4 6.2 1.2 1.8.8 3.2 2 4.3 3.4 1 1.4 1.5 3 1.5 5h-5.8z"/></svg>
+</file>
+
+<file path="public/vercel.svg">
+<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1155 1000"><path d="m577.3 0 577.4 1000H0z" fill="#fff"/></svg>
+</file>
+
+<file path="public/window.svg">
+<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill-rule="evenodd" clip-rule="evenodd" d="M1.5 2.5h13v10a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1zM0 1h16v11.5a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 0 12.5zm3.75 4.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5M7 4.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0m1.75.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5" fill="#666"/></svg>
+</file>
+
+<file path="README.md">
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+
+## Getting Started
+
+First, run the development server:
+
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+
+## Learn More
+
+To learn more about Next.js, take a look at the following resources:
+
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+
+## Deploy on Vercel
+
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+</file>
+
+<file path="tsconfig.json">
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": ["./*"]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts",
+    "**/*.mts"
+  ],
+  "exclude": ["node_modules"]
+}
+</file>
+
+<file path=".gitignore">
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+.vercel
+</file>
+
+<file path="app/dashboard/analytics/page.tsx">
+'use client'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
+
+export default function AnalyticsPage() {
+  const router = useRouter()
+  const [users, setUsers] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const auth = localStorage.getItem('aerocrew_admin_auth')
+    if (!auth) { router.push('/'); return }
+    fetchData()
+  }, [])
+
+  const fetchData = async () => {
+    const { data } = await supabase.from('users').select('*').neq('role', 'admin')
+    setUsers(data || [])
+    setLoading(false)
+  }
+
+  const crew = users.filter(u => u.role === 'crew')
+  const operators = users.filter(u => u.role === 'operator')
+  const verified = users.filter(u => u.status === 'verified')
+  const pending = users.filter(u => u.status === 'pending' || u.status === 'pending_verification')
+
+  const zoneData = crew.reduce((acc: any, u) => {
+    const zone = u.home_zone || 'Unknown'
+    acc[zone] = (acc[zone] || 0) + 1
+    return acc
+  }, {})
+
+  const airlineData = crew.reduce((acc: any, u) => {
+    const airline = u.airline || 'Unknown'
+    acc[airline] = (acc[airline] || 0) + 1
+    return acc
+  }, {})
+
+  const productData = crew.reduce((acc: any, u) => {
+    const product = u.product || 'aeropool'
+    acc[product] = (acc[product] || 0) + 1
+    return acc
+  }, {})
+
+  const maxZoneCount = Math.max(...Object.values(zoneData as Record<string, number>).map(Number), 1)
+
+  return (
+    <main className="min-h-screen bg-[#0A0E1A]">
+      <header className="bg-[#1C2333] border-b border-[#2A3347] px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center gap-4">
+          <button
+            onClick={() => router.push('/dashboard')}
+            className="w-8 h-8 bg-[#0A0E1A] rounded-lg border border-[#2A3347] flex items-center justify-center text-white hover:bg-[#2A3347] transition-colors text-sm"
+          >←</button>
+          <span className="text-white font-semibold">User analytics</span>
+        </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {loading ? (
+          <div className="flex justify-center py-20">
+            <div className="w-8 h-8 border-2 border-[#BA7517] border-t-transparent rounded-full animate-spin"/>
+          </div>
+        ) : (
+          <>
+            {/* Overview */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              {[
+                { label: 'Total users', value: users.length, color: 'text-white' },
+                { label: 'Flight crew', value: crew.length, color: 'text-blue-400' },
+                { label: 'Van operators', value: operators.length, color: 'text-[#BA7517]' },
+                { label: 'Verified', value: verified.length, color: 'text-green-400' },
+              ].map(s => (
+                <div key={s.label} className="bg-[#1C2333] rounded-2xl border border-[#2A3347] p-5">
+                  <p className="text-[#888] text-xs uppercase tracking-wider mb-2">{s.label}</p>
+                  <p className={`text-3xl font-bold ${s.color}`}>{s.value}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              {/* Zone distribution */}
+              <div className="bg-[#1C2333] rounded-2xl border border-[#2A3347] p-6">
+                <h3 className="text-white font-semibold mb-4">Crew by zone</h3>
+                <div className="space-y-3">
+                  {Object.entries(zoneData as Record<string, number>)
+                    .sort(([,a],[,b]) => b - a)
+                    .slice(0, 6)
+                    .map(([zone, count]) => (
+                    <div key={zone}>
+                      <div className="flex justify-between mb-1">
+                        <span className="text-[#888] text-xs">{zone}</span>
+                        <span className="text-white text-xs font-semibold">{count}</span>
+                      </div>
+                      <div className="h-2 bg-[#2A3347] rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-[#BA7517] rounded-full transition-all"
+                          style={{ width: `${(count / maxZoneCount) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                  {Object.keys(zoneData).length === 0 && (
+                    <p className="text-[#888] text-sm">No zone data yet</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Airline distribution */}
+              <div className="bg-[#1C2333] rounded-2xl border border-[#2A3347] p-6">
+                <h3 className="text-white font-semibold mb-4">Crew by airline</h3>
+                <div className="space-y-3">
+                  {Object.entries(airlineData as Record<string, number>)
+                    .sort(([,a],[,b]) => b - a)
+                    .map(([airline, count]) => (
+                    <div key={airline} className="flex items-center justify-between bg-[#0A0E1A] rounded-xl p-3 border border-[#2A3347]">
+                      <span className="text-white text-sm">{airline}</span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-16 h-2 bg-[#2A3347] rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-blue-500 rounded-full"
+                            style={{ width: `${(count / Math.max(crew.length, 1)) * 100}%` }}
+                          />
+                        </div>
+                        <span className="text-[#888] text-xs w-4 text-right">{count}</span>
+                      </div>
+                    </div>
+                  ))}
+                  {Object.keys(airlineData).length === 0 && (
+                    <p className="text-[#888] text-sm">No airline data yet</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Product distribution */}
+              <div className="bg-[#1C2333] rounded-2xl border border-[#2A3347] p-6">
+                <h3 className="text-white font-semibold mb-4">Subscription products</h3>
+                <div className="space-y-3">
+                  {[
+                    { id: 'aeropool', label: 'AeroPool', color: '#BA7517' },
+                    { id: 'aeroflex', label: 'AeroFlex', color: '#378ADD' },
+                    { id: 'aerosolo', label: 'AeroSolo', color: '#EF9F27' },
+                  ].map(p => {
+                    const count = productData[p.id] || 0
+                    const pct = crew.length > 0 ? Math.round((count / crew.length) * 100) : 0
+                    return (
+                      <div key={p.id}>
+                        <div className="flex justify-between mb-1">
+                          <span className="text-sm font-medium" style={{ color: p.color }}>{p.label}</span>
+                          <span className="text-[#888] text-xs">{count} ({pct}%)</span>
+                        </div>
+                        <div className="h-2 bg-[#2A3347] rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all"
+                            style={{ width: `${pct}%`, backgroundColor: p.color }}
+                          />
+                        </div>
+                      </div>
+                    )
+                  })}
+                  {crew.length === 0 && (
+                    <p className="text-[#888] text-sm">No crew data yet</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Status breakdown */}
+            <div className="bg-[#1C2333] rounded-2xl border border-[#2A3347] p-6">
+              <h3 className="text-white font-semibold mb-4">Verification status breakdown</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {[
+                  { label: 'Verified', count: verified.length, color: 'text-green-400', bg: 'bg-green-900/20 border-green-500/20' },
+                  { label: 'Pending', count: pending.length, color: 'text-amber-400', bg: 'bg-amber-900/20 border-amber-500/20' },
+                  { label: 'Rejected', count: users.filter(u => u.status === 'rejected').length, color: 'text-red-400', bg: 'bg-red-900/20 border-red-500/20' },
+                  { label: 'Suspended', count: users.filter(u => u.status === 'suspended').length, color: 'text-gray-400', bg: 'bg-gray-900/20 border-gray-500/20' },
+                ].map(s => (
+                  <div key={s.label} className={`rounded-xl border p-4 ${s.bg}`}>
+                    <p className={`text-2xl font-bold ${s.color}`}>{s.count}</p>
+                    <p className="text-[#888] text-xs mt-1">{s.label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </main>
+  )
+}
+</file>
+
+<file path="app/dashboard/zones/page.tsx">
+'use client'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+
+const DEFAULT_ZONES = [
+  { id: 1, name: 'Nilai', price: 300, airports: ['KLIA', 'klia2'], active: true },
+  { id: 2, name: 'Cyberjaya', price: 350, airports: ['KLIA', 'klia2'], active: true },
+  { id: 3, name: 'Putra Heights', price: 450, airports: ['KLIA', 'klia2', 'SZB'], active: true },
+  { id: 4, name: 'Shah Alam', price: 650, airports: ['KLIA', 'klia2', 'SZB'], active: true },
+  { id: 5, name: 'Subang Jaya', price: 600, airports: ['SZB', 'KLIA'], active: true },
+  { id: 6, name: 'Petaling Jaya', price: 700, airports: ['SZB', 'KLIA', 'klia2'], active: true },
+  { id: 7, name: 'Ara Damansara', price: 750, airports: ['SZB', 'KLIA', 'klia2'], active: true },
+  { id: 8, name: 'Damansara', price: 850, airports: ['KLIA', 'klia2'], active: true },
+  { id: 9, name: 'Kepong', price: 700, airports: ['KLIA', 'klia2'], active: false },
+  { id: 10, name: 'Ampang', price: 780, airports: ['KLIA', 'klia2'], active: false },
+  { id: 11, name: 'Cheras', price: 720, airports: ['KLIA', 'klia2'], active: false },
+  { id: 12, name: 'Setapak', price: 760, airports: ['KLIA', 'klia2'], active: false },
+]
+
+export default function ZonesPage() {
+  const router = useRouter()
+  const [zones, setZones] = useState(DEFAULT_ZONES)
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editPrice, setEditPrice] = useState('')
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [newZone, setNewZone] = useState({ name: '', price: '', airports: [] as string[] })
+
+  const toggleZone = (id: number) => {
+    setZones(zones.map(z => z.id === id ? { ...z, active: !z.active } : z))
+  }
+
+  const savePrice = (id: number) => {
+    setZones(zones.map(z => z.id === id ? { ...z, price: parseInt(editPrice) || z.price } : z))
+    setEditingId(null)
+  }
+
+  const addZone = () => {
+    if (!newZone.name || !newZone.price) return
+    setZones([...zones, {
+      id: zones.length + 1,
+      name: newZone.name,
+      price: parseInt(newZone.price),
+      airports: newZone.airports.length ? newZone.airports : ['KLIA'],
+      active: false,
+    }])
+    setNewZone({ name: '', price: '', airports: [] })
+    setShowAddForm(false)
+  }
+
+  const activeZones = zones.filter(z => z.active)
+  const inactiveZones = zones.filter(z => !z.active)
+  const avgPrice = Math.round(activeZones.reduce((s, z) => s + z.price, 0) / (activeZones.length || 1))
+
+  return (
+    <main className="min-h-screen bg-[#0A0E1A]">
+      <header className="bg-[#1C2333] border-b border-[#2A3347] px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="w-8 h-8 bg-[#0A0E1A] rounded-lg border border-[#2A3347] flex items-center justify-center text-white hover:bg-[#2A3347] transition-colors text-sm"
+            >←</button>
+            <span className="text-white font-semibold">Zone management</span>
+          </div>
+          <button
+            onClick={() => setShowAddForm(true)}
+            className="px-4 py-2 bg-[#BA7517] hover:bg-[#E8920A] text-white text-sm font-semibold rounded-xl transition-colors"
+          >
+            + Add zone
+          </button>
+        </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-4 mb-8">
+          <div className="bg-[#1C2333] rounded-2xl border border-[#2A3347] p-5">
+            <p className="text-[#888] text-xs uppercase tracking-wider mb-2">Active zones</p>
+            <p className="text-3xl font-bold text-green-400">{activeZones.length}</p>
+          </div>
+          <div className="bg-[#1C2333] rounded-2xl border border-[#2A3347] p-5">
+            <p className="text-[#888] text-xs uppercase tracking-wider mb-2">Avg price</p>
+            <p className="text-3xl font-bold text-[#BA7517]">RM{avgPrice}</p>
+          </div>
+          <div className="bg-[#1C2333] rounded-2xl border border-[#2A3347] p-5">
+            <p className="text-[#888] text-xs uppercase tracking-wider mb-2">Total zones</p>
+            <p className="text-3xl font-bold text-white">{zones.length}</p>
+          </div>
+        </div>
+
+        {/* Add form */}
+        {showAddForm && (
+          <div className="bg-[#1C2333] rounded-2xl border border-[#BA7517]/30 p-6 mb-6">
+            <h3 className="text-white font-semibold mb-4">Add new zone</h3>
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="text-[#888] text-xs uppercase tracking-wider block mb-2">Zone name</label>
+                <input
+                  value={newZone.name}
+                  onChange={e => setNewZone({...newZone, name: e.target.value})}
+                  placeholder="e.g. Kepong"
+                  className="w-full bg-[#0A0E1A] border border-[#2A3347] rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:border-[#BA7517]"
+                />
+              </div>
+              <div>
+                <label className="text-[#888] text-xs uppercase tracking-wider block mb-2">Monthly price (RM)</label>
+                <input
+                  value={newZone.price}
+                  onChange={e => setNewZone({...newZone, price: e.target.value})}
+                  placeholder="e.g. 700"
+                  type="number"
+                  className="w-full bg-[#0A0E1A] border border-[#2A3347] rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:border-[#BA7517]"
+                />
+              </div>
+            </div>
+            <div className="mb-4">
+              <label className="text-[#888] text-xs uppercase tracking-wider block mb-2">Airports served</label>
+              <div className="flex gap-2">
+                {['KLIA', 'klia2', 'SZB', 'PEN'].map(a => (
+                  <button
+                    key={a}
+                    onClick={() => {
+                      const airports = newZone.airports.includes(a)
+                        ? newZone.airports.filter(x => x !== a)
+                        : [...newZone.airports, a]
+                      setNewZone({...newZone, airports})
+                    }}
+                    className={`px-3 py-1 rounded-lg text-sm border transition-colors ${
+                      newZone.airports.includes(a)
+                        ? 'bg-[#BA7517]/20 text-[#BA7517] border-[#BA7517]/30'
+                        : 'bg-[#0A0E1A] text-[#888] border-[#2A3347]'
+                    }`}
+                  >{a}</button>
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={addZone} className="px-4 py-2 bg-[#BA7517] text-white text-sm font-semibold rounded-xl">Save zone</button>
+              <button onClick={() => setShowAddForm(false)} className="px-4 py-2 bg-[#2A3347] text-[#888] text-sm rounded-xl">Cancel</button>
+            </div>
+          </div>
+        )}
+
+        {/* Active zones */}
+        <div className="bg-[#1C2333] rounded-2xl border border-[#2A3347] overflow-hidden mb-6">
+          <div className="px-6 py-4 border-b border-[#2A3347]">
+            <h2 className="text-white font-semibold">Active zones ({activeZones.length})</h2>
+          </div>
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-[#2A3347]">
+                {['Zone', 'Monthly price', 'Airports', 'Status', 'Actions'].map(h => (
+                  <th key={h} className="px-6 py-3 text-left text-xs font-semibold text-[#888] uppercase tracking-wider">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#2A3347]">
+              {activeZones.map(zone => (
+                <tr key={zone.id} className="hover:bg-[#ffffff05]">
+                  <td className="px-6 py-4 text-white font-medium">{zone.name}</td>
+                  <td className="px-6 py-4">
+                    {editingId === zone.id ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          value={editPrice}
+                          onChange={e => setEditPrice(e.target.value)}
+                          className="w-20 bg-[#0A0E1A] border border-[#BA7517] rounded-lg px-2 py-1 text-white text-sm focus:outline-none"
+                        />
+                        <button onClick={() => savePrice(zone.id)} className="text-green-400 text-xs font-semibold">Save</button>
+                        <button onClick={() => setEditingId(null)} className="text-[#888] text-xs">Cancel</button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span className="text-[#BA7517] font-semibold">RM{zone.price}</span>
+                        <button
+                          onClick={() => { setEditingId(zone.id); setEditPrice(zone.price.toString()) }}
+                          className="text-[#555] hover:text-[#888] text-xs"
+                        >edit</button>
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex gap-1 flex-wrap">
+                      {zone.airports.map(a => (
+                        <span key={a} className="text-xs px-2 py-0.5 bg-[#2A3347] text-[#888] rounded">{a}</span>
+                      ))}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="text-xs px-2 py-1 rounded-lg bg-green-900/30 text-green-400 border border-green-500/20">Active</span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <button
+                      onClick={() => toggleZone(zone.id)}
+                      className="text-xs px-3 py-1 bg-[#0A0E1A] hover:bg-[#2A3347] text-[#888] rounded-lg border border-[#2A3347] transition-colors"
+                    >Deactivate</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Inactive zones */}
+        {inactiveZones.length > 0 && (
+          <div className="bg-[#1C2333] rounded-2xl border border-[#2A3347] overflow-hidden">
+            <div className="px-6 py-4 border-b border-[#2A3347]">
+              <h2 className="text-white font-semibold">Inactive zones ({inactiveZones.length})</h2>
+            </div>
+            <table className="w-full">
+              <tbody className="divide-y divide-[#2A3347]">
+                {inactiveZones.map(zone => (
+                  <tr key={zone.id} className="hover:bg-[#ffffff05] opacity-60">
+                    <td className="px-6 py-4 text-white">{zone.name}</td>
+                    <td className="px-6 py-4 text-[#BA7517] font-semibold">RM{zone.price}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex gap-1">
+                        {zone.airports.map(a => (
+                          <span key={a} className="text-xs px-2 py-0.5 bg-[#2A3347] text-[#888] rounded">{a}</span>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-xs px-2 py-1 rounded-lg bg-[#2A3347] text-[#888] border border-[#2A3347]">Inactive</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <button
+                        onClick={() => toggleZone(zone.id)}
+                        className="text-xs px-3 py-1 bg-green-900/30 hover:bg-green-900/50 text-green-400 rounded-lg border border-green-500/20 transition-colors"
+                      >Activate</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </main>
+  )
+}
+</file>
+
+<file path="app/globals.css">
+@import "tailwindcss";
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  background: #0A0E1A;
+}
+</file>
+
+<file path="app/page.tsx">
+'use client'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+
+export default function Home() {
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const router = useRouter()
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+    
+    if (password === process.env.NEXT_PUBLIC_ADMIN_PASSWORD || password === 'aerocrew2026') {
+      localStorage.setItem('aerocrew_admin_auth', 'true')
+      router.push('/dashboard')
+    } else {
+      setError('Incorrect password')
+    }
+    setLoading(false)
+  }
+
+  return (
+    <main className="min-h-screen bg-[#0A0E1A] flex items-center justify-center p-6">
+      <div className="w-full max-w-sm">
+        <div className="flex items-center gap-3 mb-10 justify-center">
+          <div className="w-10 h-10 bg-[#BA7517] rounded-xl flex items-center justify-center">
+            <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>
+            </svg>
+          </div>
+          <span className="text-white text-xl font-semibold">AeroCrew Admin</span>
+        </div>
+
+        <div className="bg-[#1C2333] rounded-2xl border border-[#2A3347] p-8">
+          <h1 className="text-white text-2xl font-bold mb-1">Admin access</h1>
+          <p className="text-[#888] text-sm mb-8">Restricted to AeroCrew team only</p>
+
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label className="text-[#888] text-xs font-semibold tracking-widest uppercase block mb-2">
+                Password
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter admin password"
+                className="w-full bg-[#0A0E1A] border border-[#2A3347] rounded-xl px-4 py-3 text-white text-sm placeholder-[#555] focus:outline-none focus:border-[#BA7517] transition-colors"
+              />
+            </div>
+
+            {error && (
+              <div className="bg-red-900/20 border border-red-500/30 rounded-xl px-4 py-3">
+                <p className="text-red-400 text-sm">{error}</p>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-[#BA7517] hover:bg-[#E8920A] text-white font-semibold py-3 rounded-xl transition-colors disabled:opacity-50"
+            >
+              {loading ? 'Signing in...' : 'Sign in'}
+            </button>
+          </form>
+        </div>
+
+        <p className="text-center text-[#444] text-xs mt-6">
+          AeroCrew · Internal Admin Panel · v1.0
+        </p>
+      </div>
+    </main>
+  )
+}
+</file>
+
+<file path="package.json">
+{
+  "name": "aerocrew-admin",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@supabase/auth-helpers-nextjs": "^0.15.0",
+    "@supabase/supabase-js": "^2.108.1",
+    "lucide-react": "^1.17.0",
+    "next": "16.2.9",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "recharts": "^3.8.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "babel-plugin-react-compiler": "1.0.0",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.9",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
+</file>
+
+<file path="app/dashboard/page.tsx">
+'use client'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
+
+interface User {
+  id: string
+  name: string
+  email: string
+  role: string
+  status: string
+  airline?: string
+  vehicle_type?: string
+  coverage_zones?: string
+  created_at: string
+}
+
+export default function Dashboard() {
+  const router = useRouter()
+  const [users, setUsers] = useState<User[]>([])
+  const [loading, setLoading] = useState(true)
+  const [pools, setPools] = useState<any[]>([])
+  const [showPools, setShowPools] = useState(false)
+  const [search, setSearch] = useState('')
+  const [activeTab, setActiveTab] = useState<'overview' | 'crew' | 'operators' | 'pending'>('overview')
+  const [stats, setStats] = useState({
+    totalCrew: 0,
+    totalOperators: 0,
+    pendingVerification: 0,
+    verifiedOperators: 0,
+  })
+
+  useEffect(() => {
+    const auth = localStorage.getItem('aerocrew_admin_auth')
+    if (!auth) {
+      router.push('/')
+      return
+    }
+    fetchUsers()
+  }, [])
+
+  const fetchUsers = async () => {
+  setLoading(true)
+
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .neq('role', 'admin')
+      .order('created_at', { ascending: false })
+
+    if (error) {
+  console.log("SUPABASE ERROR MESSAGE:", error.message)
+  console.log("SUPABASE ERROR DETAILS:", error.details)
+  console.log("SUPABASE ERROR HINT:", error.hint)
+  console.log("SUPABASE ERROR CODE:", error.code)
+  return
+}
+
+    const allUsers = data || []
+
+console.log("RAW DATA:", data)
+console.log("USER COUNT:", data?.length)
+
+setUsers(allUsers)
+
+    setStats({
+      totalCrew: allUsers.filter(u => u.role === 'crew').length,
+      totalOperators: allUsers.filter(u => u.role === 'operator').length,
+      pendingVerification: allUsers.filter(u =>
+        u.status === 'pending' || u.status === 'pending_verification'
+      ).length,
+      verifiedOperators: allUsers.filter(u =>
+        u.role === 'operator' && u.status === 'verified'
+      ).length,
+    })
+
+  } catch (e) {
+    console.error("FETCH FAILED:", e)
+  } finally {
+    setLoading(false)
+  }
+}
+
+  const fetchPools = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('active_pools')
+      .select('*')
+      .limit(20)
+
+    if (error) {
+      console.log("POOL ERROR MESSAGE:", error.message)
+      console.log("POOL ERROR DETAILS:", error.details)
+      console.log("POOL ERROR HINT:", error.hint)
+      console.log("POOL ERROR CODE:", error.code)
+      return
+    }
+
+    console.log("POOLS FOUND:", data)
+
+    setPools(data || [])
+    setShowPools(true)
+
+  } catch (e) {
+    console.error("FETCH POOLS FAILED:", e)
+  }
+}
+
+  const updateStatus = async (userId: string, status: string) => {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ status, updated_at: new Date().toISOString() })
+        .eq('id', userId)
+      if (error) throw error
+      fetchUsers()
+    } catch (e) {
+      console.error('Error updating status:', e)
+    }
+  }
+
+  const filteredUsers = () => {
+    let list = users
+    switch (activeTab) {
+      case 'crew': list = users.filter(u => u.role === 'crew'); break
+      case 'operators': list = users.filter(u => u.role === 'operator'); break
+      case 'pending': list = users.filter(u =>
+        u.status === 'pending' || u.status === 'pending_verification'
+      ); break
+    }
+    if (search.trim()) {
+      const q = search.toLowerCase()
+      list = list.filter(u =>
+        u.name?.toLowerCase().includes(q) ||
+        u.email?.toLowerCase().includes(q)
+      )
+    }
+    return list
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'verified': return 'bg-green-900/30 text-green-400 border-green-500/20'
+      case 'pending_verification':
+      case 'pending': return 'bg-amber-900/30 text-amber-400 border-amber-500/20'
+      case 'suspended': return 'bg-red-900/30 text-red-400 border-red-500/20'
+      default: return 'bg-gray-900/30 text-gray-400 border-gray-500/20'
+    }
+  }
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'pending_verification': return 'Pending docs'
+      case 'pending': return 'Pending'
+      case 'verified': return 'Verified'
+      case 'suspended': return 'Suspended'
+      case 'rejected': return 'Rejected'
+      default: return status
+    }
+  }
+
+  return (
+    <main className="min-h-screen bg-[#0A0E1A]">
+      <header className="bg-[#1C2333] border-b border-[#2A3347] px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-[#BA7517] rounded-lg flex items-center justify-center">
+              <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>
+              </svg>
+            </div>
+            <span className="text-white font-semibold">AeroCrew Admin</span>
+            <span className="text-[#2A3347] mx-2">|</span>
+            <span className="text-[#888] text-sm">Internal dashboard</span>
+          </div>
+          <div className="flex items-center gap-4 flex-wrap">
+            <button
+              onClick={() => router.push('/dashboard/revenue')}
+              className="text-[#BA7517] hover:text-[#E8920A] text-sm transition-colors font-medium"
+            >
+              Revenue
+            </button>
+            <button
+              onClick={() => router.push('/dashboard/analytics')}
+              className="text-[#378ADD] hover:text-blue-300 text-sm transition-colors font-medium"
+            >
+              Analytics
+            </button>
+            <button
+              onClick={() => router.push('/dashboard/zones')}
+              className="text-[#1D9E75] hover:text-green-300 text-sm transition-colors font-medium"
+            >
+              Zones
+            </button>
+            <button
+              onClick={() => router.push('/dashboard/operations')}
+              className="text-purple-400 hover:text-purple-300 text-sm transition-colors font-medium"
+            >
+              Operations
+            </button>
+            <button
+              onClick={() => router.push('/dashboard/leaderboard')}
+              className="text-yellow-400 hover:text-yellow-300 text-sm transition-colors font-medium"
+            >
+              Leaderboard
+            </button>
+            <button
+              onClick={() => router.push('/dashboard/reconciliation')}
+              className="text-cyan-400 hover:text-cyan-300 text-sm transition-colors font-medium"
+            >
+              Payouts
+            </button>
+            <button
+              onClick={() => router.push('/dashboard/notifications')}
+              className="text-pink-400 hover:text-pink-300 text-sm transition-colors font-medium"
+            >
+              Notify
+            </button>
+            <button
+              onClick={() => router.push('/dashboard/reports')}
+              className="text-orange-400 hover:text-orange-300 text-sm transition-colors font-medium"
+            >
+              Reports
+            </button>
+            <button
+              onClick={() => router.push('/dashboard/settings')}
+              className="text-slate-400 hover:text-white text-sm transition-colors font-medium"
+            >
+              Settings
+            </button>
+            <button
+              onClick={() => {
+                localStorage.removeItem('aerocrew_admin_auth')
+                router.push('/')
+              }}
+              className="text-[#888] hover:text-white text-sm transition-colors"
+            >
+              Sign out
+            </button>
+                    </div>
+        </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          {[
+            { label: 'Active crew', value: stats.totalCrew, color: 'text-white' },
+            { label: 'Operators', value: stats.totalOperators, color: 'text-white' },
+            { label: 'Pending review', value: stats.pendingVerification, color: 'text-amber-400' },
+            { label: 'Verified operators', value: stats.verifiedOperators, color: 'text-green-400' },
+          ].map((stat) => (
+            <div key={stat.label} className="bg-[#1C2333] rounded-2xl border border-[#2A3347] p-5">
+              <p className="text-[#888] text-xs font-semibold tracking-widest uppercase mb-2">{stat.label}</p>
+              <p className={`text-3xl font-bold ${stat.color}`}>{stat.value}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex gap-4 mb-6 items-center">
+          <input
+            type="text"
+            placeholder="Search by name or email..."
+            onChange={(e) => setSearch(e.target.value)}
+            className="bg-[#1C2333] border border-[#2A3347] rounded-xl px-4 py-2 text-white text-sm placeholder-[#555] focus:outline-none focus:border-[#BA7517] transition-colors w-72"
+          />
+        </div>
+        <div className="flex gap-2 mb-6 bg-[#1C2333] p-1 rounded-xl border border-[#2A3347] w-fit">
+          {[
+            { id: 'overview', label: 'All users' },
+            { id: 'pending', label: `Pending (${stats.pendingVerification})` },
+            { id: 'crew', label: `Crew (${stats.totalCrew})` },
+            { id: 'operators', label: `Operators (${stats.totalOperators})` },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as 'overview' | 'crew' | 'operators' | 'pending')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                activeTab === tab.id ? 'bg-[#BA7517] text-white' : 'text-[#888] hover:text-white'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="bg-[#1C2333] rounded-2xl border border-[#2A3347] overflow-hidden">
+          <div className="px-6 py-4 border-b border-[#2A3347] flex items-center justify-between">
+            <h2 className="text-white font-semibold">
+              {activeTab === 'pending' ? 'Pending verifications' :
+               activeTab === 'crew' ? 'Flight crew' :
+               activeTab === 'operators' ? 'Van operators' : 'All users'}
+            </h2>
+            <div className="flex items-center gap-4">
+              <button onClick={fetchUsers} className="text-[#BA7517] text-sm hover:text-[#E8920A] transition-colors">
+                Refresh
+              </button>
+              <button onClick={fetchPools} className="text-[#378ADD] text-sm hover:text-blue-300 transition-colors">
+                View pools
+              </button>
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="flex items-center justify-center py-20">
+              <div className="w-8 h-8 border-2 border-[#BA7517] border-t-transparent rounded-full animate-spin"/>
+            </div>
+          ) : filteredUsers().length === 0 ? (
+            <div className="text-center py-20">
+              <p className="text-[#888]">No users found</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-[#2A3347]">
+                    {['Name', 'Email', 'Role', 'Details', 'Status', 'Actions'].map(h => (
+                      <th key={h} className="px-6 py-3 text-left text-xs font-semibold text-[#888] uppercase tracking-wider">
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#2A3347]">
+                  {filteredUsers().map((user) => (
+                    <tr key={user.id} className="hover:bg-[#ffffff05] transition-colors cursor-pointer" onClick={() => router.push(`/dashboard/user/${user.id}`)}>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-[#BA7517]/20 flex items-center justify-center text-[#BA7517] text-xs font-bold flex-shrink-0">
+                            {user.name?.charAt(0) || '?'}
+                          </div>
+                          <span className="text-white text-sm font-medium">{user.name}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-[#888] text-sm">{user.email}</td>
+                      <td className="px-6 py-4">
+                        <span className={`text-xs px-2 py-1 rounded-lg font-medium border ${
+                          user.role === 'crew'
+                            ? 'bg-blue-900/30 text-blue-400 border-blue-500/20'
+                            : 'bg-amber-900/30 text-amber-400 border-amber-500/20'
+                        }`}>
+                          {user.role === 'crew' ? 'Flight crew' : 'Van operator'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-[#888] text-sm">
+                        {user.role === 'crew' ? user.airline || '—' : user.vehicle_type || '—'}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`text-xs px-2 py-1 rounded-lg font-medium border ${getStatusColor(user.status)}`}>
+                          {getStatusLabel(user.status)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex gap-2">
+                          {(user.status === 'pending' || user.status === 'pending_verification') && (
+                            <>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); updateStatus(user.id, 'verified') }}
+                                className="px-3 py-1 bg-green-900/30 hover:bg-green-900/50 text-green-400 text-xs font-semibold rounded-lg border border-green-500/20 transition-colors"
+                              >
+                                Approve
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); updateStatus(user.id, 'rejected') }}
+                                className="px-3 py-1 bg-red-900/30 hover:bg-red-900/50 text-red-400 text-xs font-semibold rounded-lg border border-red-500/20 transition-colors"
+                              >
+                                Reject
+                              </button>
+                            </>
+                          )}
+                          {user.status === 'verified' && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); updateStatus(user.id, 'suspended') }}
+                              className="px-3 py-1 bg-[#1C2333] hover:bg-[#2A3347] text-[#888] text-xs font-semibold rounded-lg border border-[#2A3347] transition-colors"
+                            >
+                              Suspend
+                            </button>
+                          )}
+                          {user.status === 'suspended' && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); updateStatus(user.id, 'verified') }}
+                              className="px-3 py-1 bg-green-900/30 hover:bg-green-900/50 text-green-400 text-xs font-semibold rounded-lg border border-green-500/20 transition-colors"
+                            >
+                              Reinstate
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {showPools && (
+          <div className="bg-[#1C2333] rounded-2xl border border-[#2A3347] overflow-hidden mt-6">
+            <div className="px-6 py-4 border-b border-[#2A3347] flex items-center justify-between">
+              <h2 className="text-white font-semibold">Active matching pools</h2>
+              <button
+                onClick={() => setShowPools(false)}
+                className="text-[#888] hover:text-white text-sm transition-colors"
+              >
+                Hide
+              </button>
+            </div>
+            {pools.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-[#888]">No active pools yet</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-[#2A3347]">
+                      {['Airport', 'Zone', 'Date', 'Window', 'Crew', 'Operator', 'Status'].map(h => (
+                        <th key={h} className="px-6 py-3 text-left text-xs font-semibold text-[#888] uppercase tracking-wider">
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#2A3347]">
+                    {pools.map((pool) => (
+                      <tr key={pool.id} className="hover:bg-[#ffffff05]">
+                        <td className="px-6 py-4 text-white text-sm font-medium">{pool.airport}</td>
+                        <td className="px-6 py-4 text-[#888] text-sm">{pool.zone}</td>
+                        <td className="px-6 py-4 text-[#888] text-sm">{pool.flight_date}</td>
+                        <td className="px-6 py-4 text-[#888] text-sm">{pool.departure_window_start} – {pool.departure_window_end}</td>
+                        <td className="px-6 py-4">
+                          <span className="text-white font-semibold">{pool.current_count}</span>
+                          <span className="text-[#888] text-sm">/{pool.max_capacity}</span>
+                        </td>
+                        <td className="px-6 py-4 text-[#888] text-sm">{pool.operator_name || '—'}</td>
+                        <td className="px-6 py-4">
+                          <span className={`text-xs px-2 py-1 rounded-lg font-medium border ${
+                            pool.status === 'assigned'
+                              ? 'bg-green-900/30 text-green-400 border-green-500/20'
+                              : 'bg-amber-900/30 text-amber-400 border-amber-500/20'
+                          }`}>
+                            {pool.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </main>
+  )
+}
+</file>
+
+</files>
