@@ -2,140 +2,239 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-const zones = [
-  { name: 'Petaling Jaya', code: 'PJ', price: 700, crew: 0, operators: 0, status: 'active', airport: 'SZB' },
-  { name: 'Ara Damansara', code: 'ARA', price: 750, crew: 0, operators: 0, status: 'active', airport: 'SZB/KLIA' },
-  { name: 'Shah Alam', code: 'SA', price: 650, crew: 0, operators: 0, status: 'active', airport: 'SZB/KLIA' },
-  { name: 'Subang Jaya', code: 'SJ', price: 600, crew: 0, operators: 0, status: 'active', airport: 'SZB' },
-  { name: 'Cyberjaya', code: 'CYB', price: 350, crew: 0, operators: 0, status: 'active', airport: 'KLIA/klia2' },
-  { name: 'Nilai', code: 'NLI', price: 300, crew: 0, operators: 0, status: 'active', airport: 'KLIA/klia2' },
-  { name: 'Putra Heights', code: 'PH', price: 450, crew: 0, operators: 0, status: 'active', airport: 'SZB/KLIA' },
-  { name: 'Damansara', code: 'DAM', price: 850, crew: 0, operators: 0, status: 'active', airport: 'KLIA' },
-  { name: 'Penang', code: 'PEN', price: 400, crew: 0, operators: 0, status: 'coming_soon', airport: 'PEN' },
-  { name: 'Johor Bahru', code: 'JB', price: 500, crew: 0, operators: 0, status: 'coming_soon', airport: 'JHB' },
-  { name: 'Singapore', code: 'SIN', price: 0, crew: 0, operators: 0, status: 'planned', airport: 'SIN' },
-  { name: 'Bangkok', code: 'BKK', price: 0, crew: 0, operators: 0, status: 'planned', airport: 'BKK' },
+const DEFAULT_ZONES = [
+  { id: 1, name: 'Nilai', price: 300, airports: ['KLIA', 'klia2'], active: true },
+  { id: 2, name: 'Cyberjaya', price: 350, airports: ['KLIA', 'klia2'], active: true },
+  { id: 3, name: 'Putra Heights', price: 450, airports: ['KLIA', 'klia2', 'SZB'], active: true },
+  { id: 4, name: 'Shah Alam', price: 650, airports: ['KLIA', 'klia2', 'SZB'], active: true },
+  { id: 5, name: 'Subang Jaya', price: 600, airports: ['SZB', 'KLIA'], active: true },
+  { id: 6, name: 'Petaling Jaya', price: 700, airports: ['SZB', 'KLIA', 'klia2'], active: true },
+  { id: 7, name: 'Ara Damansara', price: 750, airports: ['SZB', 'KLIA', 'klia2'], active: true },
+  { id: 8, name: 'Damansara', price: 850, airports: ['KLIA', 'klia2'], active: true },
+  { id: 9, name: 'Kepong', price: 700, airports: ['KLIA', 'klia2'], active: false },
+  { id: 10, name: 'Ampang', price: 780, airports: ['KLIA', 'klia2'], active: false },
+  { id: 11, name: 'Cheras', price: 720, airports: ['KLIA', 'klia2'], active: false },
+  { id: 12, name: 'Setapak', price: 760, airports: ['KLIA', 'klia2'], active: false },
 ]
 
 export default function ZonesPage() {
   const router = useRouter()
-  const [editingZone, setEditingZone] = useState<string | null>(null)
-  const [prices, setPrices] = useState<Record<string, number>>(
-    Object.fromEntries(zones.map(z => [z.code, z.price]))
-  )
+  const [zones, setZones] = useState(DEFAULT_ZONES)
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editPrice, setEditPrice] = useState('')
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [newZone, setNewZone] = useState({ name: '', price: '', airports: [] as string[] })
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-900/30 text-green-400 border-green-500/20'
-      case 'coming_soon': return 'bg-amber-900/30 text-amber-400 border-amber-500/20'
-      case 'planned': return 'bg-[#2A3347] text-[#888] border-[#2A3347]'
-      default: return 'bg-gray-900/30 text-gray-400 border-gray-500/20'
-    }
+  const toggleZone = (id: number) => {
+    setZones(zones.map(z => z.id === id ? { ...z, active: !z.active } : z))
   }
 
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'active': return 'Active'
-      case 'coming_soon': return 'Coming soon'
-      case 'planned': return 'Planned'
-      default: return status
-    }
+  const savePrice = (id: number) => {
+    setZones(zones.map(z => z.id === id ? { ...z, price: parseInt(editPrice) || z.price } : z))
+    setEditingId(null)
   }
+
+  const addZone = () => {
+    if (!newZone.name || !newZone.price) return
+    setZones([...zones, {
+      id: zones.length + 1,
+      name: newZone.name,
+      price: parseInt(newZone.price),
+      airports: newZone.airports.length ? newZone.airports : ['KLIA'],
+      active: false,
+    }])
+    setNewZone({ name: '', price: '', airports: [] })
+    setShowAddForm(false)
+  }
+
+  const activeZones = zones.filter(z => z.active)
+  const inactiveZones = zones.filter(z => !z.active)
+  const avgPrice = Math.round(activeZones.reduce((s, z) => s + z.price, 0) / (activeZones.length || 1))
 
   return (
     <main className="min-h-screen bg-[#0A0E1A]">
       <header className="bg-[#1C2333] border-b border-[#2A3347] px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center gap-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="w-8 h-8 bg-[#0A0E1A] rounded-lg border border-[#2A3347] flex items-center justify-center text-white hover:bg-[#2A3347] transition-colors text-sm"
+            >←</button>
+            <span className="text-white font-semibold">Zone management</span>
+          </div>
           <button
-            onClick={() => router.push('/dashboard')}
-            className="w-8 h-8 bg-[#0A0E1A] rounded-lg border border-[#2A3347] flex items-center justify-center text-white hover:bg-[#2A3347] transition-colors text-sm"
-          >←</button>
-          <span className="text-white font-semibold">Zone management</span>
-          <span className="text-[#2A3347]">|</span>
-          <span className="text-[#888] text-sm">{zones.filter(z => z.status === 'active').length} active zones</span>
+            onClick={() => setShowAddForm(true)}
+            className="px-4 py-2 bg-[#BA7517] hover:bg-[#E8920A] text-white text-sm font-semibold rounded-xl transition-colors"
+          >
+            + Add zone
+          </button>
         </div>
       </header>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          {[
-            { label: 'Active zones', value: zones.filter(z => z.status === 'active').length, color: 'text-green-400' },
-            { label: 'Coming soon', value: zones.filter(z => z.status === 'coming_soon').length, color: 'text-amber-400' },
-            { label: 'Planned expansion', value: zones.filter(z => z.status === 'planned').length, color: 'text-[#888]' },
-            { label: 'Avg zone price', value: `RM${Math.round(zones.filter(z => z.price > 0).reduce((a, z) => a + z.price, 0) / zones.filter(z => z.price > 0).length)}`, color: 'text-[#BA7517]' },
-          ].map(s => (
-            <div key={s.label} className="bg-[#1C2333] rounded-2xl border border-[#2A3347] p-5">
-              <p className="text-[#888] text-xs font-semibold uppercase tracking-wider mb-2">{s.label}</p>
-              <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
-            </div>
-          ))}
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-4 mb-8">
+          <div className="bg-[#1C2333] rounded-2xl border border-[#2A3347] p-5">
+            <p className="text-[#888] text-xs uppercase tracking-wider mb-2">Active zones</p>
+            <p className="text-3xl font-bold text-green-400">{activeZones.length}</p>
+          </div>
+          <div className="bg-[#1C2333] rounded-2xl border border-[#2A3347] p-5">
+            <p className="text-[#888] text-xs uppercase tracking-wider mb-2">Avg price</p>
+            <p className="text-3xl font-bold text-[#BA7517]">RM{avgPrice}</p>
+          </div>
+          <div className="bg-[#1C2333] rounded-2xl border border-[#2A3347] p-5">
+            <p className="text-[#888] text-xs uppercase tracking-wider mb-2">Total zones</p>
+            <p className="text-3xl font-bold text-white">{zones.length}</p>
+          </div>
         </div>
 
-        <div className="bg-[#1C2333] rounded-2xl border border-[#2A3347] overflow-hidden">
-          <div className="px-6 py-4 border-b border-[#2A3347]">
-            <h2 className="text-white font-semibold">All zones</h2>
+        {/* Add form */}
+        {showAddForm && (
+          <div className="bg-[#1C2333] rounded-2xl border border-[#BA7517]/30 p-6 mb-6">
+            <h3 className="text-white font-semibold mb-4">Add new zone</h3>
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="text-[#888] text-xs uppercase tracking-wider block mb-2">Zone name</label>
+                <input
+                  value={newZone.name}
+                  onChange={e => setNewZone({...newZone, name: e.target.value})}
+                  placeholder="e.g. Kepong"
+                  className="w-full bg-[#0A0E1A] border border-[#2A3347] rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:border-[#BA7517]"
+                />
+              </div>
+              <div>
+                <label className="text-[#888] text-xs uppercase tracking-wider block mb-2">Monthly price (RM)</label>
+                <input
+                  value={newZone.price}
+                  onChange={e => setNewZone({...newZone, price: e.target.value})}
+                  placeholder="e.g. 700"
+                  type="number"
+                  className="w-full bg-[#0A0E1A] border border-[#2A3347] rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:border-[#BA7517]"
+                />
+              </div>
+            </div>
+            <div className="mb-4">
+              <label className="text-[#888] text-xs uppercase tracking-wider block mb-2">Airports served</label>
+              <div className="flex gap-2">
+                {['KLIA', 'klia2', 'SZB', 'PEN'].map(a => (
+                  <button
+                    key={a}
+                    onClick={() => {
+                      const airports = newZone.airports.includes(a)
+                        ? newZone.airports.filter(x => x !== a)
+                        : [...newZone.airports, a]
+                      setNewZone({...newZone, airports})
+                    }}
+                    className={`px-3 py-1 rounded-lg text-sm border transition-colors ${
+                      newZone.airports.includes(a)
+                        ? 'bg-[#BA7517]/20 text-[#BA7517] border-[#BA7517]/30'
+                        : 'bg-[#0A0E1A] text-[#888] border-[#2A3347]'
+                    }`}
+                  >{a}</button>
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={addZone} className="px-4 py-2 bg-[#BA7517] text-white text-sm font-semibold rounded-xl">Save zone</button>
+              <button onClick={() => setShowAddForm(false)} className="px-4 py-2 bg-[#2A3347] text-[#888] text-sm rounded-xl">Cancel</button>
+            </div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-[#2A3347]">
-                  {['Zone', 'Airport', 'Monthly price', 'Status', 'Actions'].map(h => (
-                    <th key={h} className="px-6 py-3 text-left text-xs font-semibold text-[#888] uppercase tracking-wider">{h}</th>
-                  ))}
+        )}
+
+        {/* Active zones */}
+        <div className="bg-[#1C2333] rounded-2xl border border-[#2A3347] overflow-hidden mb-6">
+          <div className="px-6 py-4 border-b border-[#2A3347]">
+            <h2 className="text-white font-semibold">Active zones ({activeZones.length})</h2>
+          </div>
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-[#2A3347]">
+                {['Zone', 'Monthly price', 'Airports', 'Status', 'Actions'].map(h => (
+                  <th key={h} className="px-6 py-3 text-left text-xs font-semibold text-[#888] uppercase tracking-wider">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#2A3347]">
+              {activeZones.map(zone => (
+                <tr key={zone.id} className="hover:bg-[#ffffff05]">
+                  <td className="px-6 py-4 text-white font-medium">{zone.name}</td>
+                  <td className="px-6 py-4">
+                    {editingId === zone.id ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          value={editPrice}
+                          onChange={e => setEditPrice(e.target.value)}
+                          className="w-20 bg-[#0A0E1A] border border-[#BA7517] rounded-lg px-2 py-1 text-white text-sm focus:outline-none"
+                        />
+                        <button onClick={() => savePrice(zone.id)} className="text-green-400 text-xs font-semibold">Save</button>
+                        <button onClick={() => setEditingId(null)} className="text-[#888] text-xs">Cancel</button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span className="text-[#BA7517] font-semibold">RM{zone.price}</span>
+                        <button
+                          onClick={() => { setEditingId(zone.id); setEditPrice(zone.price.toString()) }}
+                          className="text-[#555] hover:text-[#888] text-xs"
+                        >edit</button>
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex gap-1 flex-wrap">
+                      {zone.airports.map(a => (
+                        <span key={a} className="text-xs px-2 py-0.5 bg-[#2A3347] text-[#888] rounded">{a}</span>
+                      ))}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="text-xs px-2 py-1 rounded-lg bg-green-900/30 text-green-400 border border-green-500/20">Active</span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <button
+                      onClick={() => toggleZone(zone.id)}
+                      className="text-xs px-3 py-1 bg-[#0A0E1A] hover:bg-[#2A3347] text-[#888] rounded-lg border border-[#2A3347] transition-colors"
+                    >Deactivate</button>
+                  </td>
                 </tr>
-              </thead>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Inactive zones */}
+        {inactiveZones.length > 0 && (
+          <div className="bg-[#1C2333] rounded-2xl border border-[#2A3347] overflow-hidden">
+            <div className="px-6 py-4 border-b border-[#2A3347]">
+              <h2 className="text-white font-semibold">Inactive zones ({inactiveZones.length})</h2>
+            </div>
+            <table className="w-full">
               <tbody className="divide-y divide-[#2A3347]">
-                {zones.map(zone => (
-                  <tr key={zone.code} className="hover:bg-[#ffffff05]">
+                {inactiveZones.map(zone => (
+                  <tr key={zone.id} className="hover:bg-[#ffffff05] opacity-60">
+                    <td className="px-6 py-4 text-white">{zone.name}</td>
+                    <td className="px-6 py-4 text-[#BA7517] font-semibold">RM{zone.price}</td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-[#BA7517]/20 rounded-lg flex items-center justify-center text-[#BA7517] text-xs font-bold">
-                          {zone.code}
-                        </div>
-                        <span className="text-white font-medium text-sm">{zone.name}</span>
+                      <div className="flex gap-1">
+                        {zone.airports.map(a => (
+                          <span key={a} className="text-xs px-2 py-0.5 bg-[#2A3347] text-[#888] rounded">{a}</span>
+                        ))}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-[#888] text-sm">{zone.airport}</td>
                     <td className="px-6 py-4">
-                      {editingZone === zone.code ? (
-                        <div className="flex items-center gap-2">
-                          <span className="text-[#888] text-sm">RM</span>
-                          <input
-                            type="number"
-                            value={prices[zone.code]}
-                            onChange={e => setPrices(p => ({ ...p, [zone.code]: Number(e.target.value) }))}
-                            className="w-20 bg-[#0A0E1A] border border-[#BA7517] rounded-lg px-2 py-1 text-white text-sm focus:outline-none"
-                          />
-                          <button
-                            onClick={() => setEditingZone(null)}
-                            className="text-green-400 text-xs font-semibold"
-                          >Save</button>
-                        </div>
-                      ) : (
-                        <span className="text-white text-sm font-medium">
-                          {zone.price > 0 ? `RM${prices[zone.code]}` : '—'}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`text-xs px-2 py-1 rounded-lg border font-medium ${getStatusBadge(zone.status)}`}>
-                        {getStatusLabel(zone.status)}
-                      </span>
+                      <span className="text-xs px-2 py-1 rounded-lg bg-[#2A3347] text-[#888] border border-[#2A3347]">Inactive</span>
                     </td>
                     <td className="px-6 py-4">
                       <button
-                        onClick={() => setEditingZone(zone.code)}
-                        className="text-[#BA7517] text-xs hover:text-[#E8920A] transition-colors font-medium"
-                      >
-                        Edit price
-                      </button>
+                        onClick={() => toggleZone(zone.id)}
+                        className="text-xs px-3 py-1 bg-green-900/30 hover:bg-green-900/50 text-green-400 rounded-lg border border-green-500/20 transition-colors"
+                      >Activate</button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </div>
+        )}
       </div>
     </main>
   )

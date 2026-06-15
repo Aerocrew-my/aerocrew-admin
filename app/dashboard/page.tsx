@@ -194,6 +194,42 @@ setUsers(allUsers)
               Zones
             </button>
             <button
+              onClick={() => router.push('/dashboard/operations')}
+              className="text-purple-400 hover:text-purple-300 text-sm transition-colors font-medium"
+            >
+              Operations
+            </button>
+            <button
+              onClick={() => router.push('/dashboard/leaderboard')}
+              className="text-yellow-400 hover:text-yellow-300 text-sm transition-colors font-medium"
+            >
+              Leaderboard
+            </button>
+            <button
+              onClick={() => router.push('/dashboard/reconciliation')}
+              className="text-cyan-400 hover:text-cyan-300 text-sm transition-colors font-medium"
+            >
+              Payouts
+            </button>
+            <button
+              onClick={() => router.push('/dashboard/notifications')}
+              className="text-pink-400 hover:text-pink-300 text-sm transition-colors font-medium"
+            >
+              Notify
+            </button>
+            <button
+              onClick={() => router.push('/dashboard/analytics')}
+              className="text-[#378ADD] hover:text-blue-300 text-sm transition-colors font-medium"
+            >
+              Analytics
+            </button>
+            <button
+              onClick={() => router.push('/dashboard/zones')}
+              className="text-[#1D9E75] hover:text-green-300 text-sm transition-colors font-medium"
+            >
+              Zones
+            </button>
+            <button
               onClick={() => router.push('/dashboard/analytics')}
               className="text-[#378ADD] hover:text-blue-300 text-sm transition-colors font-medium"
             >

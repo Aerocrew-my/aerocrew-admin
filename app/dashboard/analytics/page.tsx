@@ -15,10 +15,8 @@ export default function AnalyticsPage() {
   }, [])
 
   const fetchData = async () => {
-    try {
-      const { data } = await supabase.from('users').select('*').neq('role', 'admin')
-      setUsers(data || [])
-    } catch (e) { console.error(e) }
+    const { data } = await supabase.from('users').select('*').neq('role', 'admin')
+    setUsers(data || [])
     setLoading(false)
   }
 
@@ -27,29 +25,25 @@ export default function AnalyticsPage() {
   const verified = users.filter(u => u.status === 'verified')
   const pending = users.filter(u => u.status === 'pending' || u.status === 'pending_verification')
 
-  const conversionRate = users.length > 0
-    ? ((verified.length / users.length) * 100).toFixed(1)
-    : '0'
+  const zoneData = crew.reduce((acc: any, u) => {
+    const zone = u.home_zone || 'Unknown'
+    acc[zone] = (acc[zone] || 0) + 1
+    return acc
+  }, {})
 
-  const metrics = [
-    { label: 'Total signups', value: users.length, change: '+12', positive: true },
-    { label: 'Verified users', value: verified.length, change: '+5', positive: true },
-    { label: 'Pending review', value: pending.length, change: '+3', positive: false },
-    { label: 'Conversion rate', value: `${conversionRate}%`, change: '+2.1%', positive: true },
-    { label: 'Crew signups', value: crew.length, change: '+8', positive: true },
-    { label: 'Operator signups', value: operators.length, change: '+2', positive: true },
-    { label: 'Verified operators', value: operators.filter(u => u.status === 'verified').length, change: '+1', positive: true },
-    { label: 'Avg time to verify', value: '18h', change: '-2h', positive: true },
-  ]
+  const airlineData = crew.reduce((acc: any, u) => {
+    const airline = u.airline || 'Unknown'
+    acc[airline] = (acc[airline] || 0) + 1
+    return acc
+  }, {})
 
-  const funnelSteps = [
-    { label: 'Visited signup', value: users.length + 24, pct: 100 },
-    { label: 'Completed signup', value: users.length + 8, pct: 85 },
-    { label: 'Verified phone (OTP)', value: users.length + 2, pct: 72 },
-    { label: 'Completed profile', value: users.length, pct: 64 },
-    { label: 'Documents submitted', value: Math.floor(users.length * 0.8), pct: 51 },
-    { label: 'Account verified', value: verified.length, pct: Math.round((verified.length / (users.length + 24)) * 100) },
-  ]
+  const productData = crew.reduce((acc: any, u) => {
+    const product = u.product || 'aeropool'
+    acc[product] = (acc[product] || 0) + 1
+    return acc
+  }, {})
+
+  const maxZoneCount = Math.max(...Object.values(zoneData as Record<string, number>).map(Number), 1)
 
   return (
     <main className="min-h-screen bg-[#0A0E1A]">
@@ -60,103 +54,133 @@ export default function AnalyticsPage() {
             className="w-8 h-8 bg-[#0A0E1A] rounded-lg border border-[#2A3347] flex items-center justify-center text-white hover:bg-[#2A3347] transition-colors text-sm"
           >←</button>
           <span className="text-white font-semibold">User analytics</span>
-          <span className="text-[#2A3347]">|</span>
-          <span className="text-[#888] text-sm">Live data from Supabase</span>
         </div>
       </header>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         {loading ? (
-          <div className="flex items-center justify-center py-20">
+          <div className="flex justify-center py-20">
             <div className="w-8 h-8 border-2 border-[#BA7517] border-t-transparent rounded-full animate-spin"/>
           </div>
         ) : (
           <>
+            {/* Overview */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-              {metrics.map(m => (
-                <div key={m.label} className="bg-[#1C2333] rounded-2xl border border-[#2A3347] p-5">
-                  <p className="text-[#888] text-xs font-semibold uppercase tracking-wider mb-2">{m.label}</p>
-                  <p className="text-2xl font-bold text-white">{m.value}</p>
-                  <p className={`text-xs mt-1 font-medium ${m.positive ? 'text-green-400' : 'text-red-400'}`}>
-                    {m.change} this week
-                  </p>
+              {[
+                { label: 'Total users', value: users.length, color: 'text-white' },
+                { label: 'Flight crew', value: crew.length, color: 'text-blue-400' },
+                { label: 'Van operators', value: operators.length, color: 'text-[#BA7517]' },
+                { label: 'Verified', value: verified.length, color: 'text-green-400' },
+              ].map(s => (
+                <div key={s.label} className="bg-[#1C2333] rounded-2xl border border-[#2A3347] p-5">
+                  <p className="text-[#888] text-xs uppercase tracking-wider mb-2">{s.label}</p>
+                  <p className={`text-3xl font-bold ${s.color}`}>{s.value}</p>
                 </div>
               ))}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              {/* Zone distribution */}
               <div className="bg-[#1C2333] rounded-2xl border border-[#2A3347] p-6">
-                <h3 className="text-white font-semibold mb-6">Signup funnel</h3>
+                <h3 className="text-white font-semibold mb-4">Crew by zone</h3>
                 <div className="space-y-3">
-                  {funnelSteps.map((step, i) => (
-                    <div key={step.label}>
+                  {Object.entries(zoneData as Record<string, number>)
+                    .sort(([,a],[,b]) => b - a)
+                    .slice(0, 6)
+                    .map(([zone, count]) => (
+                    <div key={zone}>
                       <div className="flex justify-between mb-1">
-                        <span className="text-[#888] text-sm">{step.label}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-white text-sm font-medium">{step.value}</span>
-                          <span className="text-[#555] text-xs">{step.pct}%</span>
-                        </div>
+                        <span className="text-[#888] text-xs">{zone}</span>
+                        <span className="text-white text-xs font-semibold">{count}</span>
                       </div>
-                      <div className="w-full bg-[#2A3347] rounded-full h-2">
+                      <div className="h-2 bg-[#2A3347] rounded-full overflow-hidden">
                         <div
-                          className="h-2 rounded-full transition-all duration-500"
-                          style={{
-                            width: `${step.pct}%`,
-                            backgroundColor: i === 0 ? '#BA7517' : i < 3 ? '#E8920A' : '#1D9E75'
-                          }}
+                          className="h-full bg-[#BA7517] rounded-full transition-all"
+                          style={{ width: `${(count / maxZoneCount) * 100}%` }}
                         />
                       </div>
                     </div>
                   ))}
+                  {Object.keys(zoneData).length === 0 && (
+                    <p className="text-[#888] text-sm">No zone data yet</p>
+                  )}
                 </div>
               </div>
 
+              {/* Airline distribution */}
               <div className="bg-[#1C2333] rounded-2xl border border-[#2A3347] p-6">
-                <h3 className="text-white font-semibold mb-6">User breakdown</h3>
-                <div className="space-y-4">
-                  {[
-                    { label: 'Flight crew', value: crew.length, total: users.length, color: '#378ADD' },
-                    { label: 'Van operators', value: operators.length, total: users.length, color: '#BA7517' },
-                    { label: 'Verified accounts', value: verified.length, total: users.length, color: '#1D9E75' },
-                    { label: 'Pending verification', value: pending.length, total: users.length, color: '#EF9F27' },
-                  ].map(item => (
-                    <div key={item.label}>
-                      <div className="flex justify-between mb-1">
-                        <span className="text-[#888] text-sm">{item.label}</span>
-                        <span className="text-white text-sm font-medium">
-                          {item.value} / {item.total}
-                        </span>
-                      </div>
-                      <div className="w-full bg-[#2A3347] rounded-full h-2">
-                        <div
-                          className="h-2 rounded-full"
-                          style={{
-                            width: item.total > 0 ? `${(item.value / item.total) * 100}%` : '0%',
-                            backgroundColor: item.color,
-                          }}
-                        />
+                <h3 className="text-white font-semibold mb-4">Crew by airline</h3>
+                <div className="space-y-3">
+                  {Object.entries(airlineData as Record<string, number>)
+                    .sort(([,a],[,b]) => b - a)
+                    .map(([airline, count]) => (
+                    <div key={airline} className="flex items-center justify-between bg-[#0A0E1A] rounded-xl p-3 border border-[#2A3347]">
+                      <span className="text-white text-sm">{airline}</span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-16 h-2 bg-[#2A3347] rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-blue-500 rounded-full"
+                            style={{ width: `${(count / Math.max(crew.length, 1)) * 100}%` }}
+                          />
+                        </div>
+                        <span className="text-[#888] text-xs w-4 text-right">{count}</span>
                       </div>
                     </div>
                   ))}
+                  {Object.keys(airlineData).length === 0 && (
+                    <p className="text-[#888] text-sm">No airline data yet</p>
+                  )}
                 </div>
+              </div>
 
-                <div className="mt-6 pt-4 border-t border-[#2A3347]">
-                  <h4 className="text-[#888] text-xs font-semibold uppercase tracking-wider mb-3">
-                    Operator status breakdown
-                  </h4>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[
-                      { label: 'Verified', value: operators.filter(u => u.status === 'verified').length, color: 'text-green-400' },
-                      { label: 'Pending', value: operators.filter(u => u.status === 'pending_verification').length, color: 'text-amber-400' },
-                      { label: 'Rejected', value: operators.filter(u => u.status === 'rejected').length, color: 'text-red-400' },
-                    ].map(s => (
-                      <div key={s.label} className="bg-[#0A0E1A] rounded-xl p-3 text-center">
-                        <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
-                        <p className="text-[#888] text-xs mt-1">{s.label}</p>
+              {/* Product distribution */}
+              <div className="bg-[#1C2333] rounded-2xl border border-[#2A3347] p-6">
+                <h3 className="text-white font-semibold mb-4">Subscription products</h3>
+                <div className="space-y-3">
+                  {[
+                    { id: 'aeropool', label: 'AeroPool', color: '#BA7517' },
+                    { id: 'aeroflex', label: 'AeroFlex', color: '#378ADD' },
+                    { id: 'aerosolo', label: 'AeroSolo', color: '#EF9F27' },
+                  ].map(p => {
+                    const count = productData[p.id] || 0
+                    const pct = crew.length > 0 ? Math.round((count / crew.length) * 100) : 0
+                    return (
+                      <div key={p.id}>
+                        <div className="flex justify-between mb-1">
+                          <span className="text-sm font-medium" style={{ color: p.color }}>{p.label}</span>
+                          <span className="text-[#888] text-xs">{count} ({pct}%)</span>
+                        </div>
+                        <div className="h-2 bg-[#2A3347] rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all"
+                            style={{ width: `${pct}%`, backgroundColor: p.color }}
+                          />
+                        </div>
                       </div>
-                    ))}
-                  </div>
+                    )
+                  })}
+                  {crew.length === 0 && (
+                    <p className="text-[#888] text-sm">No crew data yet</p>
+                  )}
                 </div>
+              </div>
+            </div>
+
+            {/* Status breakdown */}
+            <div className="bg-[#1C2333] rounded-2xl border border-[#2A3347] p-6">
+              <h3 className="text-white font-semibold mb-4">Verification status breakdown</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {[
+                  { label: 'Verified', count: verified.length, color: 'text-green-400', bg: 'bg-green-900/20 border-green-500/20' },
+                  { label: 'Pending', count: pending.length, color: 'text-amber-400', bg: 'bg-amber-900/20 border-amber-500/20' },
+                  { label: 'Rejected', count: users.filter(u => u.status === 'rejected').length, color: 'text-red-400', bg: 'bg-red-900/20 border-red-500/20' },
+                  { label: 'Suspended', count: users.filter(u => u.status === 'suspended').length, color: 'text-gray-400', bg: 'bg-gray-900/20 border-gray-500/20' },
+                ].map(s => (
+                  <div key={s.label} className={`rounded-xl border p-4 ${s.bg}`}>
+                    <p className={`text-2xl font-bold ${s.color}`}>{s.count}</p>
+                    <p className="text-[#888] text-xs mt-1">{s.label}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </>
