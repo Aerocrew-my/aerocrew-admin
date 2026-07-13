@@ -23,9 +23,10 @@ import {
   WalletCards,
   X,
 } from 'lucide-react'
+import { signOut } from '@/app/actions/auth'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
+import { useState } from 'react'
 import { ThemeToggle } from './theme-toggle'
 
 type NavItem = {
@@ -130,24 +131,21 @@ function Navigation({ onNavigate }: { onNavigate?: () => void }) {
   )
 }
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({
+  children,
+  email,
+  role,
+}: {
+  children: React.ReactNode
+  email: string
+  role: string
+}) {
   const pathname = usePathname()
-  const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [accountOpen, setAccountOpen] = useState(false)
 
-  useEffect(() => {
-    const auth = localStorage.getItem('aerocrew_admin_auth')
-    if (!auth) {
-      router.replace('/')
-      return
-    }
-  }, [router])
-
-  const signOut = () => {
-    localStorage.removeItem('aerocrew_admin_auth')
-    router.replace('/')
-  }
+  const roleLabel = role.replaceAll('_', ' ')
+  const initials = email.slice(0, 2).toUpperCase()
 
   const title = pathname.startsWith('/dashboard/user/')
     ? 'Record detail'
@@ -176,11 +174,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Link className="icon-button" href="/dashboard/notifications" aria-label="Notifications"><Bell size={18} aria-hidden="true" /></Link>
             <div className="account-menu">
               <button type="button" className="account-trigger" onClick={() => setAccountOpen((open) => !open)} aria-expanded={accountOpen}>
-                <span className="account-avatar">AC</span><span className="account-copy"><strong>Admin team</strong><small>Operations</small></span><ChevronDown size={15} aria-hidden="true" />
+                <span className="account-avatar">{initials}</span><span className="account-copy"><strong>{email}</strong><small>{roleLabel}</small></span><ChevronDown size={15} aria-hidden="true" />
               </button>
               {accountOpen && (
                 <div className="account-popover">
-                  <button type="button" onClick={signOut}><LogOut size={16} aria-hidden="true" /> Sign out</button>
+                  <form action={signOut}><button type="submit"><LogOut size={16} aria-hidden="true" /> Sign out</button></form>
                 </div>
               )}
             </div>
