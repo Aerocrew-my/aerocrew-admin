@@ -20,23 +20,20 @@ export default function NotificationsPage() {
   ]
 
   useEffect(() => {
-    const auth = localStorage.getItem('aerocrew_admin_auth')
-    if (!auth) { router.push('/'); return }
-    fetchUserCount()
-  }, [audience])
-
-  const fetchUserCount = async () => {
-    try {
-      let query = supabase.from('users').select('id', { count: 'exact' })
-      if (audience === 'crew') query = query.eq('role', 'crew')
-      if (audience === 'operators') query = query.eq('role', 'operator')
-      if (audience === 'verified') query = query.eq('status', 'verified')
-      const { count } = await query
-      setUserCount(count || 0)
-    } catch (e) {
-      setUserCount(0)
+    async function fetchUserCount() {
+      try {
+        let query = supabase.from('users').select('id', { count: 'exact' })
+        if (audience === 'crew') query = query.eq('role', 'crew')
+        if (audience === 'operators') query = query.eq('role', 'operator')
+        if (audience === 'verified') query = query.eq('status', 'verified')
+        const { count } = await query
+        setUserCount(count || 0)
+      } catch {
+        setUserCount(0)
+      }
     }
-  }
+    void fetchUserCount()
+  }, [audience])
 
   const sendNotification = async () => {
     if (!title || !body) return
@@ -57,14 +54,14 @@ export default function NotificationsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#0A0E1A]">
-      <header className="bg-[#1C2333] border-b border-[#2A3347] px-6 py-4">
+    <main className="min-h-screen bg-[var(--canvas)]">
+      <header className="bg-[var(--surface)] border-b border-[var(--border)] px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center gap-3">
           <button
             onClick={() => router.push('/dashboard')}
-            className="w-8 h-8 bg-[#0A0E1A] rounded-lg border border-[#2A3347] flex items-center justify-center text-white hover:bg-[#2A3347] transition-colors text-sm"
+            className="w-8 h-8 bg-[var(--canvas)] rounded-lg border border-[var(--border)] flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--border)] transition-colors text-sm"
           >←</button>
-          <span className="text-white font-semibold">Push notifications</span>
+          <span className="text-[var(--text-primary)] font-semibold">Push notifications</span>
         </div>
       </header>
 
@@ -72,10 +69,10 @@ export default function NotificationsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Composer */}
           <div className="space-y-4">
-            <h2 className="text-white font-semibold text-lg">Compose notification</h2>
+            <h2 className="text-[var(--text-primary)] font-semibold text-lg">Compose notification</h2>
 
             <div>
-              <label className="text-[#888] text-xs uppercase tracking-wider block mb-2">Audience</label>
+              <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-2">Audience</label>
               <div className="grid grid-cols-2 gap-2">
                 {[
                   { id: 'all', label: 'All users' },
@@ -88,8 +85,8 @@ export default function NotificationsPage() {
                     onClick={() => setAudience(a.id)}
                     className={`px-3 py-2 rounded-xl text-sm border transition-colors ${
                       audience === a.id
-                        ? 'bg-[#BA7517]/20 text-[#BA7517] border-[#BA7517]/30'
-                        : 'bg-[#1C2333] text-[#888] border-[#2A3347] hover:text-white'
+                        ? 'bg-[var(--primary)]/20 text-[var(--primary)] border-[var(--primary)]/30'
+                        : 'bg-[var(--surface)] text-[var(--text-secondary)] border-[var(--border)] hover:text-[var(--text-primary)]'
                     }`}
                   >
                     {a.label}
@@ -102,14 +99,14 @@ export default function NotificationsPage() {
             </div>
 
             <div>
-              <label className="text-[#888] text-xs uppercase tracking-wider block mb-2">Type</label>
+              <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-2">Type</label>
               <div className="flex gap-2">
                 {['info', 'success', 'warning', 'alert'].map(t => (
                   <button
                     key={t}
                     onClick={() => setType(t)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors capitalize ${
-                      type === t ? typeColors[t] + ' text-white' : 'bg-[#1C2333] text-[#888] border-[#2A3347]'
+                      type === t ? typeColors[t] + ' text-[var(--text-primary)]' : 'bg-[var(--surface)] text-[var(--text-secondary)] border-[var(--border)]'
                     }`}
                   >
                     {t}
@@ -119,65 +116,67 @@ export default function NotificationsPage() {
             </div>
 
             <div>
-              <label className="text-[#888] text-xs uppercase tracking-wider block mb-2">Title</label>
+              <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-2">Title</label>
               <input
                 value={title}
                 onChange={e => setTitle(e.target.value)}
                 placeholder="Notification title..."
-                className="w-full bg-[#1C2333] border border-[#2A3347] rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#BA7517] placeholder-[#555]"
+                className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-xl px-4 py-3 text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--primary)] placeholder-[var(--text-muted)]"
               />
             </div>
 
             <div>
-              <label className="text-[#888] text-xs uppercase tracking-wider block mb-2">Message</label>
+              <label className="text-[var(--text-secondary)] text-xs uppercase tracking-wider block mb-2">Message</label>
               <textarea
                 value={body}
                 onChange={e => setBody(e.target.value)}
                 placeholder="Notification message..."
                 rows={4}
-                className="w-full bg-[#1C2333] border border-[#2A3347] rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#BA7517] placeholder-[#555] resize-none"
+                className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-xl px-4 py-3 text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--primary)] placeholder-[var(--text-muted)] resize-none"
               />
             </div>
 
             <button
               onClick={sendNotification}
-              disabled={!title || !body || sending}
-              className="w-full py-3 bg-[#BA7517] hover:bg-[#E8920A] disabled:opacity-40 text-white font-semibold rounded-xl transition-colors"
+              disabled
+              title="Notification delivery service is not connected"
+              className="w-full py-3 bg-[var(--primary)] disabled:opacity-40 text-white font-semibold rounded-xl cursor-not-allowed"
             >
               {sending ? 'Sending...' : sent ? '✓ Sent!' : `Send to ${userCount > 0 ? userCount : 'all'} users`}
             </button>
+            <p className="mt-2 text-xs text-[var(--text-secondary)]">Notification delivery is not connected; this composer is preview-only.</p>
           </div>
 
           {/* Preview + history */}
           <div className="space-y-4">
-            <h2 className="text-white font-semibold text-lg">Preview</h2>
+            <h2 className="text-[var(--text-primary)] font-semibold text-lg">Preview</h2>
             <div className={`rounded-2xl border p-5 ${typeColors[type]}`}>
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 bg-[#BA7517] rounded-xl flex items-center justify-center flex-shrink-0">
-                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <div className="w-10 h-10 bg-[var(--primary)] rounded-xl flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-[var(--text-primary)]" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>
                   </svg>
                 </div>
                 <div>
-                  <p className="text-white font-semibold text-sm">{title || 'Notification title'}</p>
-                  <p className="text-[#888] text-xs mt-1">{body || 'Your notification message will appear here...'}</p>
-                  <p className="text-[#555] text-xs mt-2">AeroCrew · just now</p>
+                  <p className="text-[var(--text-primary)] font-semibold text-sm">{title || 'Notification title'}</p>
+                  <p className="text-[var(--text-secondary)] text-xs mt-1">{body || 'Your notification message will appear here...'}</p>
+                  <p className="text-[var(--text-muted)] text-xs mt-2">AeroCrew · just now</p>
                 </div>
               </div>
             </div>
 
-            <h2 className="text-white font-semibold text-lg pt-2">Sent history</h2>
+            <h2 className="text-[var(--text-primary)] font-semibold text-lg pt-2">Sent history</h2>
             <div className="space-y-3">
               {history.map((n, i) => (
-                <div key={i} className="bg-[#1C2333] rounded-xl border border-[#2A3347] p-4">
+                <div key={i} className="bg-[var(--surface)] rounded-xl border border-[var(--border)] p-4">
                   <div className="flex items-start justify-between mb-1">
-                    <p className="text-white text-sm font-medium">{n.title}</p>
-                    <span className="text-[#555] text-xs ml-2 shrink-0">{n.sent}</span>
+                    <p className="text-[var(--text-primary)] text-sm font-medium">{n.title}</p>
+                    <span className="text-[var(--text-muted)] text-xs ml-2 shrink-0">{n.sent}</span>
                   </div>
-                  <p className="text-[#888] text-xs mb-2">{n.body}</p>
+                  <p className="text-[var(--text-secondary)] text-xs mb-2">{n.body}</p>
                   <div className="flex gap-2">
-                    <span className="text-xs px-2 py-0.5 bg-[#2A3347] text-[#888] rounded capitalize">{n.audience}</span>
-                    <span className="text-xs px-2 py-0.5 bg-[#2A3347] text-[#888] rounded">{n.recipients} recipients</span>
+                    <span className="text-xs px-2 py-0.5 bg-[var(--border)] text-[var(--text-secondary)] rounded capitalize">{n.audience}</span>
+                    <span className="text-xs px-2 py-0.5 bg-[var(--border)] text-[var(--text-secondary)] rounded">{n.recipients} recipients</span>
                   </div>
                 </div>
               ))}

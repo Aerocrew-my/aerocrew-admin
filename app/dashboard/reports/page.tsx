@@ -76,13 +76,13 @@ export default function ReportsPage() {
   const stats = statsByPeriod[period];
 
   return (
-    <div className="min-h-screen bg-[#0a0f1e] text-white p-6">
+    <div className="min-h-screen bg-[var(--canvas)] text-[var(--text-primary)] p-6">
       {/* Page header */}
       <div className="mb-6">
         <p className="text-xs text-amber-400 font-semibold tracking-widest uppercase mb-1">
           Admin
         </p>
-        <h1 className="text-2xl font-bold text-white">Reports</h1>
+        <h1 className="text-2xl font-bold text-[var(--text-primary)]">Reports</h1>
         <p className="text-sm text-slate-400 mt-1">
           Platform performance at a glance
         </p>
@@ -96,8 +96,8 @@ export default function ReportsPage() {
             onClick={() => setPeriod(p)}
             className={`px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all border ${
               period === p
-                ? "bg-amber-500 text-white border-amber-500"
-                : "bg-[#131929] text-slate-400 border-[#1e2a3a] hover:border-amber-500/40"
+                ? "bg-amber-500 text-[var(--text-primary)] border-amber-500"
+                : "bg-[var(--surface)] text-slate-400 border-[var(--border)] hover:border-amber-500/40"
             }`}
           >
             {p}
@@ -110,10 +110,10 @@ export default function ReportsPage() {
         {stats.map((s) => (
           <div
             key={s.label}
-            className="bg-[#131929] rounded-2xl border border-[#1e2a3a] p-4"
+            className="bg-[var(--surface)] rounded-2xl border border-[var(--border)] p-4"
           >
             <p className="text-xs text-slate-400 mb-2">{s.label}</p>
-            <p className="text-xl font-bold text-white mb-1">{s.value}</p>
+            <p className="text-xl font-bold text-[var(--text-primary)] mb-1">{s.value}</p>
             <p
               className={`text-xs font-medium ${
                 s.positive ? "text-emerald-400" : "text-red-400"
@@ -127,17 +127,17 @@ export default function ReportsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent trips */}
-        <div className="lg:col-span-2 bg-[#131929] rounded-2xl border border-[#1e2a3a] p-5">
+        <div className="lg:col-span-2 bg-[var(--surface)] rounded-2xl border border-[var(--border)] p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-white">Recent trips</h2>
-            <button className="text-xs text-amber-400 font-medium hover:underline">
-              Export CSV
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">Recent trips</h2>
+            <button disabled title="Export service is not connected" className="text-xs text-slate-500 font-medium cursor-not-allowed">
+              Export unavailable
             </button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-xs text-slate-500 uppercase tracking-wide border-b border-[#1e2a3a]">
+                <tr className="text-xs text-slate-500 uppercase tracking-wide border-b border-[var(--border)]">
                   <th className="text-left pb-3 font-semibold">Trip ID</th>
                   <th className="text-left pb-3 font-semibold">Crew</th>
                   <th className="text-left pb-3 font-semibold hidden md:table-cell">
@@ -150,13 +150,13 @@ export default function ReportsPage() {
                   <th className="text-right pb-3 font-semibold">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#1e2a3a]">
+              <tbody className="divide-y divide-[var(--border)]">
                 {recentTrips.map((t) => (
                   <tr key={t.id} className="hover:bg-white/[0.02] transition">
                     <td className="py-3 text-amber-400 font-mono text-xs">
                       {t.id}
                     </td>
-                    <td className="py-3 text-white text-xs font-medium">
+                    <td className="py-3 text-[var(--text-primary)] text-xs font-medium">
                       {t.crew}
                     </td>
                     <td className="py-3 text-slate-400 text-xs hidden md:table-cell">
@@ -165,7 +165,7 @@ export default function ReportsPage() {
                     <td className="py-3 text-slate-400 text-xs hidden sm:table-cell">
                       {t.date}
                     </td>
-                    <td className="py-3 text-right text-white text-xs font-semibold">
+                    <td className="py-3 text-right text-[var(--text-primary)] text-xs font-semibold">
                       {t.fare}
                     </td>
                     <td className="py-3 text-right">
@@ -185,18 +185,18 @@ export default function ReportsPage() {
         </div>
 
         {/* Top zones */}
-        <div className="bg-[#131929] rounded-2xl border border-[#1e2a3a] p-5">
-          <h2 className="text-sm font-semibold text-white mb-4">
+        <div className="bg-[var(--surface)] rounded-2xl border border-[var(--border)] p-5">
+          <h2 className="text-sm font-semibold text-[var(--text-primary)] mb-4">
             Top zones
           </h2>
           <div className="space-y-4">
             {topZones.map((z) => (
               <div key={z.name}>
                 <div className="flex items-center justify-between mb-1">
-                  <p className="text-xs text-white font-medium">{z.name}</p>
+                  <p className="text-xs text-[var(--text-primary)] font-medium">{z.name}</p>
                   <p className="text-xs text-slate-400">{z.trips} trips</p>
                 </div>
-                <div className="w-full h-1.5 bg-[#0a0f1e] rounded-full overflow-hidden">
+                <div className="w-full h-1.5 bg-[var(--canvas)] rounded-full overflow-hidden">
                   <div
                     className="h-full bg-amber-500 rounded-full transition-all duration-500"
                     style={{ width: `${z.pct}%` }}
@@ -206,16 +206,18 @@ export default function ReportsPage() {
             ))}
           </div>
 
-          <div className="mt-6 pt-4 border-t border-[#1e2a3a]">
+          <div className="mt-6 pt-4 border-t border-[var(--border)]">
             <h3 className="text-xs text-slate-500 uppercase tracking-widest mb-3 font-semibold">
               Quick exports
             </h3>
             {["Trips report", "Revenue report", "Crew activity"].map((label) => (
               <button
                 key={label}
-                className="flex items-center justify-between w-full py-2.5 px-3 mb-2 rounded-xl bg-[#0a0f1e] border border-[#1e2a3a] hover:border-amber-500/40 transition group"
+                disabled
+                title="Export service is not connected"
+                className="flex items-center justify-between w-full py-2.5 px-3 mb-2 rounded-xl bg-[var(--canvas)] border border-[var(--border)] opacity-60 cursor-not-allowed group"
               >
-                <span className="text-xs text-slate-300 group-hover:text-white transition">
+                <span className="text-xs text-slate-300 group-hover:text-[var(--text-primary)] transition">
                   {label}
                 </span>
                 <svg

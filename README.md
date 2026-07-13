@@ -1,36 +1,46 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AeroCrew Admin
 
-## Getting Started
+Operations control centre for AeroCrew airport crew transportation. The portal supports crew and operator oversight, active transport requirements, dispatch foundations, pricing zones, reconciliation, reporting, and internal configuration.
 
-First, run the development server:
+## Stack
+
+- Next.js 16 App Router and React 19
+- TypeScript in strict mode
+- Tailwind CSS 4 with semantic Skyline Blue CSS tokens
+- Supabase browser client for the existing `users` and `active_pools` integrations
+- `next-themes` for persistent System, Light, and Dark appearance modes
+
+## Local setup
+
+Use Node.js 20 or newer and npm (the repository is locked with `package-lock.json`).
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The app runs at [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Required local variables in `.env.local`:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_ADMIN_PASSWORD=
+```
 
-## Learn More
+The current password gate is a temporary client-side control and is not suitable as the final production authentication boundary. Before launch, replace it with server-validated identity, protected sessions/middleware, role checks, and verified Supabase row-level security.
 
-To learn more about Next.js, take a look at the following resources:
+## Validation
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm run lint
+npm run typecheck
+npm run build
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+There is currently no automated test script.
 
-## Deploy on Vercel
+## Data status
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The Overview keeps the existing Supabase-backed user and active-pool queries. Live Operations uses typed scenario fixtures in `lib/fixtures/live-operations.ts` until live trips, telemetry, contact, assignment, and incident services are connected. Other legacy fixture-backed pages should not be treated as production operational data.

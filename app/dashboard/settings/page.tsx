@@ -66,7 +66,7 @@ function SectionHeader({ eyebrow, title }: { eyebrow: string; title: string }) {
       <p className="text-xs text-amber-400 font-semibold tracking-widest uppercase mb-0.5">
         {eyebrow}
       </p>
-      <h2 className="text-base font-semibold text-white">{title}</h2>
+      <h2 className="text-base font-semibold text-[var(--text-primary)]">{title}</h2>
     </div>
   );
 }
@@ -82,13 +82,15 @@ function Toggle({
 }) {
   return (
     <button
+      disabled
+      title="Configuration service is not connected"
       onClick={() => onChange(!value)}
-      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none ${
+      className={`relative inline-flex h-6 w-11 items-center rounded-full opacity-60 cursor-not-allowed ${
         value
           ? danger
             ? "bg-red-500"
             : "bg-amber-500"
-          : "bg-[#1e2a3a]"
+          : "bg-[var(--border)]"
       }`}
     >
       <span
@@ -114,9 +116,9 @@ function ToggleRow({
   danger?: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between py-4 border-b border-[#1e2a3a] last:border-0">
+    <div className="flex items-center justify-between py-4 border-b border-[var(--border)] last:border-0">
       <div className="pr-4">
-        <p className={`text-sm font-medium ${danger ? "text-red-400" : "text-white"}`}>
+        <p className={`text-sm font-medium ${danger ? "text-red-400" : "text-[var(--text-primary)]"}`}>
           {label}
         </p>
         <p className="text-xs text-slate-400 mt-0.5">{description}</p>
@@ -155,15 +157,15 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0f1e] text-white p-6 pb-16">
+    <div className="min-h-screen bg-[var(--canvas)] text-[var(--text-primary)] p-6 pb-16">
       {/* Page header */}
       <div className="mb-8">
         <p className="text-xs text-amber-400 font-semibold tracking-widest uppercase mb-1">
           Admin
         </p>
-        <h1 className="text-2xl font-bold text-white">Settings</h1>
+        <h1 className="text-2xl font-bold text-[var(--text-primary)]">Settings</h1>
         <p className="text-sm text-slate-400 mt-1">
-          Configure the AeroCrew platform
+          Configuration service is not connected. Controls are read-only.
         </p>
       </div>
 
@@ -171,7 +173,7 @@ export default function SettingsPage() {
         {/* ── General ── */}
         <section>
           <SectionHeader eyebrow="General" title="Platform configuration" />
-          <div className="bg-[#131929] rounded-2xl border border-[#1e2a3a] p-5 space-y-4">
+          <div className="bg-[var(--surface)] rounded-2xl border border-[var(--border)] p-5 space-y-4">
             {[
               {
                 label: "Support email",
@@ -207,11 +209,12 @@ export default function SettingsPage() {
                   {f.label}
                 </label>
                 <input
+                  disabled
                   type={f.type}
                   value={f.value}
                   onChange={(e) => f.set(e.target.value)}
                   placeholder={f.placeholder}
-                  className="w-full bg-[#0a0f1e] border border-[#1e2a3a] rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-amber-500 transition"
+                  className="w-full bg-[var(--canvas)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-sm text-[var(--text-primary)] placeholder-slate-600 opacity-60 cursor-not-allowed"
                 />
               </div>
             ))}
@@ -221,7 +224,7 @@ export default function SettingsPage() {
         {/* ── Platform toggles ── */}
         <section>
           <SectionHeader eyebrow="Platform" title="Feature flags" />
-          <div className="bg-[#131929] rounded-2xl border border-[#1e2a3a] px-5">
+          <div className="bg-[var(--surface)] rounded-2xl border border-[var(--border)] px-5">
             {platformToggles.map((t) => (
               <ToggleRow
                 key={t.key}
@@ -238,7 +241,7 @@ export default function SettingsPage() {
         {/* ── Notifications ── */}
         <section>
           <SectionHeader eyebrow="Notifications" title="Alert preferences" />
-          <div className="bg-[#131929] rounded-2xl border border-[#1e2a3a] px-5">
+          <div className="bg-[var(--surface)] rounded-2xl border border-[var(--border)] px-5">
             {notificationToggles.map((t) => (
               <ToggleRow
                 key={t.key}
@@ -254,7 +257,7 @@ export default function SettingsPage() {
         {/* ── Danger zone ── */}
         <section>
           <SectionHeader eyebrow="Danger zone" title="Destructive actions" />
-          <div className="bg-[#131929] rounded-2xl border border-red-500/20 p-5 space-y-3">
+          <div className="bg-[var(--surface)] rounded-2xl border border-red-500/20 p-5 space-y-3">
             {[
               { label: "Clear trip cache", desc: "Flush all cached trip data" },
               { label: "Reset zone pricing", desc: "Revert all zones to default rates" },
@@ -269,8 +272,8 @@ export default function SettingsPage() {
                   </p>
                   <p className="text-xs text-slate-500 mt-0.5">{action.desc}</p>
                 </div>
-                <button className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-red-500/40 text-red-400 hover:bg-red-500/10 transition">
-                  Run
+                <button disabled title="Configuration service is not connected" className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-red-500/30 text-red-400 opacity-60 cursor-not-allowed">
+                  Unavailable
                 </button>
               </div>
             ))}
@@ -279,11 +282,13 @@ export default function SettingsPage() {
 
         {/* ── Save button ── */}
         <button
+          disabled
+          title="Configuration service is not connected"
           onClick={handleSave}
-          className={`w-full py-4 rounded-2xl font-semibold text-sm transition-all ${
+          className={`w-full py-4 rounded-2xl font-semibold text-sm opacity-60 cursor-not-allowed ${
             saved
-              ? "bg-emerald-500 text-white"
-              : "bg-amber-500 hover:bg-amber-400 text-white"
+              ? "bg-emerald-500 text-[var(--text-primary)]"
+              : "bg-amber-500 hover:bg-amber-400 text-[var(--text-primary)]"
           }`}
         >
           {saved ? "✓ Changes saved" : "Save settings"}

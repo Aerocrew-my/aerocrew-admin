@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 const DEMO_PAYOUTS = [
@@ -15,11 +15,6 @@ export default function ReconciliationPage() {
   const [payouts, setPayouts] = useState(DEMO_PAYOUTS)
   const [filter, setFilter] = useState('all')
 
-  useEffect(() => {
-    const auth = localStorage.getItem('aerocrew_admin_auth')
-    if (!auth) { router.push('/'); return }
-  }, [])
-
   const filtered = filter === 'all' ? payouts : payouts.filter(p => p.status === filter)
   const totalGross = payouts.reduce((s, p) => s + p.gross, 0)
   const totalCommission = payouts.reduce((s, p) => s + p.commission, 0)
@@ -31,27 +26,27 @@ export default function ReconciliationPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#0A0E1A]">
-      <header className="bg-[#1C2333] border-b border-[#2A3347] px-6 py-4">
+    <main className="min-h-screen bg-[var(--canvas)]">
+      <header className="bg-[var(--surface)] border-b border-[var(--border)] px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center gap-3">
           <button
             onClick={() => router.push('/dashboard')}
-            className="w-8 h-8 bg-[#0A0E1A] rounded-lg border border-[#2A3347] flex items-center justify-center text-white hover:bg-[#2A3347] transition-colors text-sm"
+            className="w-8 h-8 bg-[var(--canvas)] rounded-lg border border-[var(--border)] flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--border)] transition-colors text-sm"
           >←</button>
-          <span className="text-white font-semibold">Financial reconciliation</span>
+          <span className="text-[var(--text-primary)] font-semibold">Financial reconciliation</span>
         </div>
       </header>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {[
-            { label: 'Total gross', value: `RM${totalGross.toLocaleString()}`, color: 'text-white' },
-            { label: 'Total commission', value: `RM${totalCommission.toLocaleString()}`, color: 'text-[#BA7517]' },
+            { label: 'Total gross', value: `RM${totalGross.toLocaleString()}`, color: 'text-[var(--text-primary)]' },
+            { label: 'Total commission', value: `RM${totalCommission.toLocaleString()}`, color: 'text-[var(--primary)]' },
             { label: 'Operator payouts', value: `RM${Math.round(totalNet).toLocaleString()}`, color: 'text-green-400' },
             { label: 'Pending payout', value: `RM${Math.round(pendingAmount).toLocaleString()}`, color: 'text-amber-400' },
           ].map(s => (
-            <div key={s.label} className="bg-[#1C2333] rounded-2xl border border-[#2A3347] p-5">
-              <p className="text-[#888] text-xs uppercase tracking-wider mb-2">{s.label}</p>
+            <div key={s.label} className="bg-[var(--surface)] rounded-2xl border border-[var(--border)] p-5">
+              <p className="text-[var(--text-secondary)] text-xs uppercase tracking-wider mb-2">{s.label}</p>
               <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
             </div>
           ))}
@@ -64,8 +59,8 @@ export default function ReconciliationPage() {
               onClick={() => setFilter(f)}
               className={`px-4 py-2 rounded-xl text-sm font-medium border transition-colors capitalize ${
                 filter === f
-                  ? 'bg-[#BA7517] text-white border-[#BA7517]'
-                  : 'bg-[#1C2333] text-[#888] border-[#2A3347] hover:text-white'
+                  ? 'bg-[var(--primary)] text-white border-[var(--primary)]'
+                  : 'bg-[var(--surface)] text-[var(--text-secondary)] border-[var(--border)] hover:text-[var(--text-primary)]'
               }`}
             >
               {f === 'all' ? `All (${payouts.length})` : `${f} (${payouts.filter(p => p.status === f).length})`}
@@ -73,26 +68,26 @@ export default function ReconciliationPage() {
           ))}
         </div>
 
-        <div className="bg-[#1C2333] rounded-2xl border border-[#2A3347] overflow-hidden">
+        <div className="bg-[var(--surface)] rounded-2xl border border-[var(--border)] overflow-hidden">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-[#2A3347]">
+              <tr className="border-b border-[var(--border)]">
                 {['Payout ID', 'Operator', 'Period', 'Trips', 'Gross', 'Commission (15%)', 'Net payout', 'Bank', 'Status', 'Actions'].map(h => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-[#888] uppercase tracking-wider whitespace-nowrap">{h}</th>
+                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider whitespace-nowrap">{h}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#2A3347]">
+            <tbody className="divide-y divide-[var(--border)]">
               {filtered.map(p => (
                 <tr key={p.id} className="hover:bg-[#ffffff05]">
-                  <td className="px-4 py-4 text-[#888] text-xs font-mono">{p.id}</td>
-                  <td className="px-4 py-4 text-white text-sm font-medium">{p.operator}</td>
-                  <td className="px-4 py-4 text-[#888] text-xs">{p.period}</td>
-                  <td className="px-4 py-4 text-white text-sm">{p.trips}</td>
-                  <td className="px-4 py-4 text-white text-sm">RM{p.gross.toLocaleString()}</td>
-                  <td className="px-4 py-4 text-[#BA7517] text-sm">−RM{p.commission.toLocaleString()}</td>
+                  <td className="px-4 py-4 text-[var(--text-secondary)] text-xs font-mono">{p.id}</td>
+                  <td className="px-4 py-4 text-[var(--text-primary)] text-sm font-medium">{p.operator}</td>
+                  <td className="px-4 py-4 text-[var(--text-secondary)] text-xs">{p.period}</td>
+                  <td className="px-4 py-4 text-[var(--text-primary)] text-sm">{p.trips}</td>
+                  <td className="px-4 py-4 text-[var(--text-primary)] text-sm">RM{p.gross.toLocaleString()}</td>
+                  <td className="px-4 py-4 text-[var(--primary)] text-sm">−RM{p.commission.toLocaleString()}</td>
                   <td className="px-4 py-4 text-green-400 text-sm font-semibold">RM{Math.round(p.net).toLocaleString()}</td>
-                  <td className="px-4 py-4 text-[#888] text-xs">{p.bank}</td>
+                  <td className="px-4 py-4 text-[var(--text-secondary)] text-xs">{p.bank}</td>
                   <td className="px-4 py-4">
                     <span className={`text-xs px-2 py-1 rounded-lg border font-medium ${
                       p.status === 'paid'

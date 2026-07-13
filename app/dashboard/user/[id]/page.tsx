@@ -31,25 +31,22 @@ export default function UserDetail() {
   const [updating, setUpdating] = useState(false)
 
   useEffect(() => {
-    const auth = localStorage.getItem('aerocrew_admin_auth')
-    if (!auth) { router.push('/'); return }
-    fetchUser()
-  }, [])
-
-  const fetchUser = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', params.id)
-        .single()
-      if (error) throw error
-      setUser(data)
-    } catch (e) {
-      console.error(e)
+    async function fetchUser() {
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', params.id)
+          .single()
+        if (error) throw error
+        setUser(data)
+      } catch (error) {
+        console.error(error)
+      }
+      setLoading(false)
     }
-    setLoading(false)
-  }
+    void fetchUser()
+  }, [params.id])
 
   const updateStatus = async (status: string) => {
     if (!user) return
@@ -80,35 +77,35 @@ export default function UserDetail() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#0A0E1A] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-[#BA7517] border-t-transparent rounded-full animate-spin"/>
+      <main className="min-h-screen bg-[var(--canvas)] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-[var(--primary)] border-t-transparent rounded-full animate-spin"/>
       </main>
     )
   }
 
   if (!user) {
     return (
-      <main className="min-h-screen bg-[#0A0E1A] flex items-center justify-center">
+      <main className="min-h-screen bg-[var(--canvas)] flex items-center justify-center">
         <div className="text-center">
-          <p className="text-white text-lg font-semibold mb-2">User not found</p>
-          <button onClick={() => router.back()} className="text-[#BA7517] text-sm">← Go back</button>
+          <p className="text-[var(--text-primary)] text-lg font-semibold mb-2">User not found</p>
+          <button onClick={() => router.back()} className="text-[var(--primary)] text-sm">← Go back</button>
         </div>
       </main>
     )
   }
 
   return (
-    <main className="min-h-screen bg-[#0A0E1A]">
-      <header className="bg-[#1C2333] border-b border-[#2A3347] px-6 py-4">
+    <main className="min-h-screen bg-[var(--canvas)]">
+      <header className="bg-[var(--surface)] border-b border-[var(--border)] px-6 py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={() => router.back()}
-              className="w-8 h-8 bg-[#0A0E1A] rounded-lg border border-[#2A3347] flex items-center justify-center text-white hover:bg-[#2A3347] transition-colors"
+              className="w-8 h-8 bg-[var(--canvas)] rounded-lg border border-[var(--border)] flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--border)] transition-colors"
             >
               ←
             </button>
-            <span className="text-white font-semibold">User detail</span>
+            <span className="text-[var(--text-primary)] font-semibold">User detail</span>
           </div>
           <div className="flex items-center gap-3">
             <span className={`text-xs px-3 py-1 rounded-lg font-medium border ${getStatusColor(user.status)}`}>
@@ -121,13 +118,13 @@ export default function UserDetail() {
       <div className="max-w-4xl mx-auto px-6 py-8 grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Profile card */}
         <div className="md:col-span-1">
-          <div className="bg-[#1C2333] rounded-2xl border border-[#2A3347] p-6 text-center mb-6">
-            <div className="w-16 h-16 bg-[#BA7517]/20 rounded-2xl flex items-center justify-center text-[#BA7517] text-2xl font-bold mx-auto mb-4">
+          <div className="bg-[var(--surface)] rounded-2xl border border-[var(--border)] p-6 text-center mb-6">
+            <div className="w-16 h-16 bg-[var(--primary)]/20 rounded-2xl flex items-center justify-center text-[var(--primary)] text-2xl font-bold mx-auto mb-4">
               {user.name?.charAt(0) || '?'}
             </div>
-            <h2 className="text-white font-bold text-lg">{user.name}</h2>
-            <p className="text-[#888] text-sm mt-1">{user.email}</p>
-            {user.phone && <p className="text-[#888] text-sm">{user.phone}</p>}
+            <h2 className="text-[var(--text-primary)] font-bold text-lg">{user.name}</h2>
+            <p className="text-[var(--text-secondary)] text-sm mt-1">{user.email}</p>
+            {user.phone && <p className="text-[var(--text-secondary)] text-sm">{user.phone}</p>}
             <div className="mt-3">
               <span className={`text-xs px-2 py-1 rounded-lg font-medium border ${
                 user.role === 'crew'
@@ -137,14 +134,14 @@ export default function UserDetail() {
                 {user.role === 'crew' ? 'Flight crew' : 'Van operator'}
               </span>
             </div>
-            <p className="text-[#555] text-xs mt-4">
+            <p className="text-[var(--text-muted)] text-xs mt-4">
               Joined {new Date(user.created_at).toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' })}
             </p>
           </div>
 
           {/* Actions */}
-          <div className="bg-[#1C2333] rounded-2xl border border-[#2A3347] p-4 space-y-2">
-            <p className="text-[#888] text-xs font-semibold uppercase tracking-wider mb-3">Actions</p>
+          <div className="bg-[var(--surface)] rounded-2xl border border-[var(--border)] p-4 space-y-2">
+            <p className="text-[var(--text-secondary)] text-xs font-semibold uppercase tracking-wider mb-3">Actions</p>
             {(user.status === 'pending' || user.status === 'pending_verification') && (
               <>
                 <button
@@ -167,7 +164,7 @@ export default function UserDetail() {
               <button
                 onClick={() => updateStatus('suspended')}
                 disabled={updating}
-                className="w-full py-2 bg-[#0A0E1A] hover:bg-[#2A3347] text-[#888] text-sm font-semibold rounded-xl border border-[#2A3347] transition-colors disabled:opacity-50"
+                className="w-full py-2 bg-[var(--canvas)] hover:bg-[var(--border)] text-[var(--text-secondary)] text-sm font-semibold rounded-xl border border-[var(--border)] transition-colors disabled:opacity-50"
               >
                 Suspend account
               </button>
@@ -187,8 +184,8 @@ export default function UserDetail() {
         {/* Details */}
         <div className="md:col-span-2 space-y-6">
           {user.role === 'crew' && (
-            <div className="bg-[#1C2333] rounded-2xl border border-[#2A3347] p-6">
-              <h3 className="text-white font-semibold mb-4">Crew details</h3>
+            <div className="bg-[var(--surface)] rounded-2xl border border-[var(--border)] p-6">
+              <h3 className="text-[var(--text-primary)] font-semibold mb-4">Crew details</h3>
               <div className="grid grid-cols-2 gap-4">
                 {[
                   { label: 'Airline', value: user.airline },
@@ -198,8 +195,8 @@ export default function UserDetail() {
                   { label: 'Product', value: user.product?.toUpperCase() },
                 ].map(item => (
                   <div key={item.label}>
-                    <p className="text-[#888] text-xs uppercase tracking-wider mb-1">{item.label}</p>
-                    <p className="text-white text-sm font-medium">{item.value || '—'}</p>
+                    <p className="text-[var(--text-secondary)] text-xs uppercase tracking-wider mb-1">{item.label}</p>
+                    <p className="text-[var(--text-primary)] text-sm font-medium">{item.value || '—'}</p>
                   </div>
                 ))}
               </div>
@@ -207,8 +204,8 @@ export default function UserDetail() {
           )}
 
           {user.role === 'operator' && (
-            <div className="bg-[#1C2333] rounded-2xl border border-[#2A3347] p-6">
-              <h3 className="text-white font-semibold mb-4">Operator details</h3>
+            <div className="bg-[var(--surface)] rounded-2xl border border-[var(--border)] p-6">
+              <h3 className="text-[var(--text-primary)] font-semibold mb-4">Operator details</h3>
               <div className="grid grid-cols-2 gap-4">
                 {[
                   { label: 'Company name', value: user.company_name },
@@ -218,8 +215,8 @@ export default function UserDetail() {
                   { label: 'Coverage zones', value: user.coverage_zones },
                 ].map(item => (
                   <div key={item.label}>
-                    <p className="text-[#888] text-xs uppercase tracking-wider mb-1">{item.label}</p>
-                    <p className="text-white text-sm font-medium">{item.value || '—'}</p>
+                    <p className="text-[var(--text-secondary)] text-xs uppercase tracking-wider mb-1">{item.label}</p>
+                    <p className="text-[var(--text-primary)] text-sm font-medium">{item.value || '—'}</p>
                   </div>
                 ))}
               </div>
@@ -227,17 +224,17 @@ export default function UserDetail() {
           )}
 
           {/* Documents placeholder */}
-          <div className="bg-[#1C2333] rounded-2xl border border-[#2A3347] p-6">
-            <h3 className="text-white font-semibold mb-4">
+          <div className="bg-[var(--surface)] rounded-2xl border border-[var(--border)] p-6">
+            <h3 className="text-[var(--text-primary)] font-semibold mb-4">
               {user.role === 'crew' ? 'Staff ID verification' : 'Submitted documents'}
             </h3>
             <div className="space-y-3">
               {user.role === 'operator' ? (
                 ['SSM Certificate', 'PSV Licence', 'Operator Permit', 'Vehicle Insurance'].map(doc => (
-                  <div key={doc} className="flex items-center justify-between bg-[#0A0E1A] rounded-xl p-3 border border-[#2A3347]">
+                  <div key={doc} className="flex items-center justify-between bg-[var(--canvas)] rounded-xl p-3 border border-[var(--border)]">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-[#E6F1FB]/10 rounded-lg flex items-center justify-center text-[#378ADD] text-xs">📄</div>
-                      <span className="text-white text-sm">{doc}</span>
+                      <div className="w-8 h-8 bg-[#E6F1FB]/10 rounded-lg flex items-center justify-center text-[var(--information)] text-xs">📄</div>
+                      <span className="text-[var(--text-primary)] text-sm">{doc}</span>
                     </div>
                     <span className={`text-xs px-2 py-1 rounded-lg border ${
                       user.status === 'verified'
@@ -249,10 +246,10 @@ export default function UserDetail() {
                   </div>
                 ))
               ) : (
-                <div className="flex items-center justify-between bg-[#0A0E1A] rounded-xl p-3 border border-[#2A3347]">
+                <div className="flex items-center justify-between bg-[var(--canvas)] rounded-xl p-3 border border-[var(--border)]">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-[#E6F1FB]/10 rounded-lg flex items-center justify-center text-[#378ADD] text-xs">🪪</div>
-                    <span className="text-white text-sm">Staff ID photo</span>
+                    <div className="w-8 h-8 bg-[#E6F1FB]/10 rounded-lg flex items-center justify-center text-[var(--information)] text-xs">🪪</div>
+                    <span className="text-[var(--text-primary)] text-sm">Staff ID photo</span>
                   </div>
                   <span className={`text-xs px-2 py-1 rounded-lg border ${
                     user.status === 'verified'
