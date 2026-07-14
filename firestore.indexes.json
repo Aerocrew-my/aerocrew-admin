@@ -1,0 +1,10 @@
+{
+  "indexes": [
+    { "collectionGroup": "trips", "queryScope": "COLLECTION", "fields": [{"fieldPath":"status","order":"ASCENDING"},{"fieldPath":"pickupAt","order":"DESCENDING"},{"fieldPath":"__name__","order":"DESCENDING"}] },
+    { "collectionGroup": "trips", "queryScope": "COLLECTION", "fields": [{"fieldPath":"airport","order":"ASCENDING"},{"fieldPath":"pickupAt","order":"DESCENDING"},{"fieldPath":"__name__","order":"DESCENDING"}] },
+    { "collectionGroup": "transport_requirements", "queryScope": "COLLECTION", "fields": [{"fieldPath":"assignmentStatus","order":"ASCENDING"},{"fieldPath":"pickupAt","order":"ASCENDING"}] },
+    { "collectionGroup": "incidents", "queryScope": "COLLECTION", "fields": [{"fieldPath":"status","order":"ASCENDING"},{"fieldPath":"createdAt","order":"DESCENDING"}] },
+    { "collectionGroup": "operators", "queryScope": "COLLECTION", "fields": [{"fieldPath":"applicationStatus","order":"ASCENDING"},{"fieldPath":"submittedAt","order":"ASCENDING"}] }
+  ],
+  "fieldOverrides": []
+}

@@ -28,12 +28,15 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import { ThemeToggle } from './theme-toggle'
+import { hasPermission, type Permission } from '@/lib/auth/permissions'
+import type { AdminRole } from '@/lib/auth/admin'
 
 type NavItem = {
   label: string
   href?: string
   icon: React.ComponentType<{ size?: number; 'aria-hidden'?: boolean }>
   soon?: boolean
+  permission?: Permission
 }
 
 const navGroups: { label: string; items: NavItem[] }[] = [
@@ -42,15 +45,15 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     items: [
       { label: 'Overview', href: '/dashboard', icon: LayoutDashboard },
       { label: 'Live Operations', href: '/dashboard/operations', icon: Activity },
-      { label: 'Trips', icon: PlaneTakeoff, soon: true },
-      { label: 'Matching', icon: SlidersHorizontal, soon: true },
+      { label: 'Trips', href: '/dashboard/trips', icon: PlaneTakeoff, permission: 'trips:read' },
+      { label: 'Matching', href: '/dashboard/matching', icon: SlidersHorizontal, permission: 'matching:read' },
     ],
   },
   {
     label: 'Network',
     items: [
       { label: 'Crew', href: '/dashboard?view=crew#records', icon: Users },
-      { label: 'Operators', href: '/dashboard?view=operators#records', icon: CarFront },
+      { label: 'Operators', href: '/dashboard/operators', icon: CarFront, permission: 'operators:read' },
       { label: 'Vehicles', icon: CarFront, soon: true },
       { label: 'Roster Imports', icon: FileClock, soon: true },
       { label: 'Pricing & Zones', href: '/dashboard/zones', icon: MapPinned },
@@ -71,7 +74,7 @@ const navGroups: { label: string; items: NavItem[] }[] = [
     items: [
       { label: 'Notifications', href: '/dashboard/notifications', icon: Bell },
       { label: 'Configuration', href: '/dashboard/settings', icon: Settings },
-      { label: 'Audit Log', icon: ClipboardCheck, soon: true },
+      { label: 'Audit Log', href: '/dashboard/audit', icon: ClipboardCheck, permission: 'audit:read' },
     ],
   },
 ]
@@ -98,7 +101,7 @@ function Brand() {
   )
 }
 
-function Navigation({ onNavigate }: { onNavigate?: () => void }) {
+function Navigation({ onNavigate, role }: { onNavigate?: () => void; role: AdminRole }) {
   const pathname = usePathname()
 
   return (
@@ -106,7 +109,7 @@ function Navigation({ onNavigate }: { onNavigate?: () => void }) {
       {navGroups.map((group) => (
         <div className="nav-group" key={group.label}>
           <p>{group.label}</p>
-          {group.items.map(({ label, href, icon: Icon, soon }) => {
+          {group.items.filter((item) => !item.permission || hasPermission(role, item.permission)).map(({ label, href, icon: Icon, soon }) => {
             const active = href
               ? href === '/dashboard'
                 ? pathname === '/dashboard'
@@ -138,7 +141,7 @@ export function AppShell({
 }: {
   children: React.ReactNode
   email: string
-  role: string
+  role: AdminRole
 }) {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -155,7 +158,7 @@ export function AppShell({
     <div className="app-shell">
       <aside className="desktop-sidebar">
         <Brand />
-        <Navigation />
+        <Navigation role={role} />
         <div className="sidebar-footer">
           <ThemeToggle />
           <p><LifeBuoy size={15} aria-hidden="true" /> Internal operations workspace</p>
@@ -191,7 +194,7 @@ export function AppShell({
         <div className="mobile-overlay" role="presentation" onMouseDown={() => setMobileOpen(false)}>
           <aside className="mobile-drawer" role="dialog" aria-modal="true" aria-label="Navigation" onMouseDown={(event) => event.stopPropagation()}>
             <div className="mobile-drawer-head"><Brand /><button className="icon-button" type="button" onClick={() => setMobileOpen(false)} aria-label="Close navigation"><X size={20} /></button></div>
-            <Navigation onNavigate={() => setMobileOpen(false)} />
+            <Navigation role={role} onNavigate={() => setMobileOpen(false)} />
             <div className="sidebar-footer"><ThemeToggle /></div>
           </aside>
         </div>

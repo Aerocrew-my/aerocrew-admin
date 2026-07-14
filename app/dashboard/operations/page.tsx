@@ -1,82 +1,8 @@
-'use client'
-
+import Link from 'next/link'
+import { AlertTriangle, MapPinned } from 'lucide-react'
 import { Card, EmptyState, Metric, PageHeader, StatusBadge } from '@/components/admin/ui'
-import { liveTripFixtures, type LiveTripFixture, type LiveTripStatus } from '@/lib/fixtures/live-operations'
-import { AlertTriangle, Clock3, Map, MapPin, Phone, Radio, Route, ShieldAlert, UserRoundCog } from 'lucide-react'
-import { useMemo, useState } from 'react'
-
-type Filter = 'all' | LiveTripStatus | 'risk'
-
-function statusTone(status: LiveTripStatus): 'neutral' | 'info' | 'warning' | 'danger' {
-  if (status === 'unassigned') return 'danger'
-  if (status === 'pickup') return 'warning'
-  if (status === 'in_progress') return 'info'
-  return 'neutral'
-}
-
-function label(value: string) {
-  return value.replaceAll('_', ' ').replace(/^./, (character) => character.toUpperCase())
-}
-
-function TripCard({ trip }: { trip: LiveTripFixture }) {
-  const progress = Math.round((trip.stopProgress.current / Math.max(trip.stopProgress.total, 1)) * 100)
-  return (
-    <Card className={`live-trip ${trip.risk === 'late' ? 'late-risk' : ''}`}>
-      <div className="trip-head">
-        <div><div className="trip-id"><strong>{trip.id}</strong><StatusBadge tone={statusTone(trip.status)}>{label(trip.status)}</StatusBadge>{trip.risk !== 'on_track' && <StatusBadge tone={trip.risk === 'late' ? 'danger' : 'warning'}>{trip.risk === 'late' ? 'Late risk' : 'Watch'}</StatusBadge>}</div><p><MapPin size={13} /> {trip.route} → {trip.airport} · Flight {trip.flightTime}</p></div>
-        <div className="countdown"><span>Pickup</span><strong>{trip.pickupCountdown}</strong><small>{trip.pickupTime} · {trip.crewCount} crew</small></div>
-      </div>
-      <div className="assignment-block">
-        <div className="operator-mark"><Route size={17} aria-hidden="true" /></div>
-        {trip.operator ? <div><strong>{trip.operator}</strong><span>{trip.driver}</span><small>{trip.vehicle}</small></div> : <div><strong>No operator assigned</strong><span>Manual assignment service is not connected</span></div>}
-        <div className="trip-actions">
-          <button type="button" disabled title="Contact integration is not connected"><Phone size={14} /> Contact</button>
-          <button type="button" disabled title="Assignment integration is not connected"><UserRoundCog size={14} /> {trip.operator ? 'Reassign' : 'Assign'}</button>
-          <button type="button" disabled title="Incident service is not connected"><ShieldAlert size={14} /> Incident</button>
-        </div>
-      </div>
-      <div className="trip-progress"><div><span>Pickup sequence</span><strong>{trip.stopProgress.current} of {trip.stopProgress.total} stops</strong></div><div className="progress-track" aria-label={`${progress}% of stops complete`}><span style={{ width: `${progress}%` }} /></div></div>
-    </Card>
-  )
-}
-
-export default function LiveOperations() {
-  const [filter, setFilter] = useState<Filter>('all')
-  const trips = useMemo(() => liveTripFixtures.filter((trip) => filter === 'all' ? true : filter === 'risk' ? trip.risk !== 'on_track' : trip.status === filter), [filter])
-  const unassigned = liveTripFixtures.filter((trip) => trip.status === 'unassigned').length
-  const risks = liveTripFixtures.filter((trip) => trip.risk !== 'on_track').length
-  const active = liveTripFixtures.filter((trip) => trip.status === 'pickup' || trip.status === 'in_progress').length
-
-  return (
-    <div className="live-page">
-      <PageHeader eyebrow="Dispatch workspace" title="Live Operations" description="Foundation for monitoring pickups, assignments and late risk. The current records are isolated scenario fixtures—not a live tracking feed." actions={<StatusBadge tone="warning"><Radio size={12} /> Scenario data</StatusBadge>} />
-
-      <div className="notice warning"><AlertTriangle size={17} aria-hidden="true" /><span>Live trip, location and contact services are not connected. Dispatch actions remain visibly disabled to prevent false operational use.</span></div>
-
-      <Card className="live-metrics">
-        <Metric label="Active trips" value={active} detail="Pickup or in progress" tone="info" />
-        <Metric label="Late pickup risks" value={risks} detail="Watch and late scenarios" tone={risks ? 'danger' : 'success'} />
-        <Metric label="Unmatched" value={unassigned} detail="No operator assigned" tone={unassigned ? 'warning' : 'success'} />
-        <Metric label="Crew in movement" value={liveTripFixtures.reduce((total, trip) => total + trip.crewCount, 0)} detail="Scenario fixture total" />
-      </Card>
-
-      <div className="live-layout">
-        <div className="map-panel">
-          <Card className="map-card">
-            <div className="map-toolbar"><div><Map size={17} /><strong>Dispatch map</strong></div><StatusBadge>Telemetry unavailable</StatusBadge></div>
-            <div className="map-canvas"><div className="airport-ring ring-one" /><div className="airport-ring ring-two" /><span className="map-route route-one" /><span className="map-route route-two" /><span className="map-pin pin-one">KUL</span><span className="map-pin pin-two">T2</span><div className="map-message"><MapPin size={22} /><strong>Map provider not connected</strong><p>This reserved operational canvas will show live vehicle positions and pickup sequencing when telemetry is available.</p></div></div>
-          </Card>
-        </div>
-
-        <Card className="dispatch-queue">
-          <div className="card-heading"><div><span>Attention queue</span><h2>Dispatch priorities</h2></div><StatusBadge tone="danger">{risks} risks</StatusBadge></div>
-          {liveTripFixtures.filter((trip) => trip.risk !== 'on_track').map((trip) => <div className="queue-row" key={trip.id}><span className={trip.risk} /><div><strong>{trip.id} · {trip.route}</strong><small>{trip.pickupCountdown}</small></div><StatusBadge tone={trip.risk === 'late' ? 'danger' : 'warning'}>{trip.risk === 'late' ? 'Action needed' : 'Monitor'}</StatusBadge></div>)}
-          <div className="queue-note"><Clock3 size={14} /><span>Countdowns are static scenario values.</span></div>
-        </Card>
-      </div>
-
-      <div className="operations-toolbar"><div><span>Trip board</span><strong>Pickup and assignment status</strong></div><div className="filter-tabs" aria-label="Filter live operations">{([{ id: 'all', text: 'All' }, { id: 'risk', text: 'At risk' }, { id: 'pickup', text: 'Pickup' }, { id: 'in_progress', text: 'In progress' }, { id: 'scheduled', text: 'Scheduled' }, { id: 'unassigned', text: 'Unassigned' }] as { id: Filter; text: string }[]).map((item) => <button type="button" className={filter === item.id ? 'active' : ''} aria-pressed={filter === item.id} key={item.id} onClick={() => setFilter(item.id)}>{item.text}</button>)}</div></div>
-      <div className="trip-list">{trips.length ? trips.map((trip) => <TripCard key={trip.id} trip={trip} />) : <Card><EmptyState title="No trips in this view" description="Choose another status filter." /></Card>}</div>
-    </div>
-  )
-}
+import { TripRepository } from '@/lib/repositories/trips'
+import { tripStatusLabel } from '@/lib/domain/operations'
+export const dynamic='force-dynamic'
+const countdown=(date:Date|null)=>{if(!date)return 'Pickup time unavailable';const mins=Math.round((date.getTime()-Date.now())/60000);return mins<0?`Overdue ${Math.abs(mins)} min`:mins<60?`${mins} min`:`${Math.floor(mins/60)} hr ${mins%60} min`}
+export default async function Operations(){let trips:Awaited<ReturnType<TripRepository['listActive']>>=[];let error:string|null=null;try{trips=await new TripRepository().listActive()}catch(e){error=e instanceof Error?e.message:'Active trips could not be loaded'}const late=trips.filter(t=>t.pickupAt&&t.pickupAt<new Date()&&t.status!=='in_progress');return <div><PageHeader eyebrow="Dispatch workspace" title="Live Operations" description="Real active-trip records. This page does not claim vehicle tracking when coordinates are absent." actions={<Link className="button secondary" href="/dashboard/operations">Refresh</Link>}/>{error&&<div className="notice danger"><AlertTriangle size={17}/>Active trips unavailable: {error}</div>}<Card className="priority-metrics"><Metric label="Active trips" value={error?'—':trips.length} detail="Driver en route, pickup or in progress"/><Metric label="Late risk" value={error?'—':late.length} detail="Pickup time passed before trip progress" tone={late.length?'danger':'success'}/><Metric label="Crew in movement" value={error?'—':trips.reduce((n,t)=>n+t.crew.length,0)} detail="Aggregate only; no crew location exposed"/></Card><Card><div className="card-heading"><div><span>Map</span><h2>Location view unavailable</h2></div><MapPinned/></div><p>Active records do not contain validated tracking coordinates. No synthetic locations are displayed.</p></Card>{!error&&trips.length===0?<Card><EmptyState title="No active trips" description="Firestore returned no active trip records."/></Card>:<div className="overview-grid">{trips.map(t=><Card key={t.id}><div className="card-heading"><Link href={`/dashboard/trips/${t.id}`}><h2>{t.id}</h2></Link><StatusBadge tone={late.includes(t)?'danger':'info'}>{tripStatusLabel(t.status)}</StatusBadge></div><p><strong>{t.pickupZone??'Pickup unavailable'} → {t.airport??'Airport unavailable'} {t.terminal??''}</strong></p><p>Pickup: {countdown(t.pickupAt)} · Required arrival: {t.requiredArrivalAt?.toLocaleString('en-MY')??'—'}</p><p>Operator: {t.operator?.companyName??'Unassigned'} · Driver: {t.driverName??'Unassigned'}</p><p>Vehicle: {t.vehicle?.registration??'Unassigned'} · Crew: {t.crew.length}</p><p>Next stop: {t.pickupStops.find(s=>!s.completedAt)?.address??'No pending stop recorded'}</p></Card>)}</div>}</div>}

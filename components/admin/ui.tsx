@@ -77,7 +77,7 @@ export function Metric({
   label: string
   value: React.ReactNode
   detail: string
-  tone?: 'default' | 'info' | 'success' | 'warning' | 'danger'
+  tone?: 'default' | 'neutral' | 'info' | 'success' | 'warning' | 'danger'
   href?: string
 }) {
   const content = (
