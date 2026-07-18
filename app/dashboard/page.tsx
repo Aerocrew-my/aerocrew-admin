@@ -10,7 +10,7 @@ const date = (value: Date | null) => value ? new Intl.DateTimeFormat('en-MY',{da
 export default async function DashboardOverview() {
   let error: string|null=null; let attention:Awaited<ReturnType<TripRepository['listRequiringAttention']>>=[]; let active:Awaited<ReturnType<TripRepository['listActive']>>=[]; let requirements:Awaited<ReturnType<RequirementRepository['listUnassigned']>>=[]; let incidents:Awaited<ReturnType<IncidentRepository['listOpen']>>=[]; let operators:Awaited<ReturnType<OperatorRepository['listPending']>>=[]
   try { [attention,active,requirements,incidents,operators]=await Promise.all([new TripRepository().listRequiringAttention(),new TripRepository().listActive(),new RequirementRepository().listUnassigned(20),new IncidentRepository().listOpen(20),new OperatorRepository().listPending(20)]) } catch(e) { error=e instanceof Error?e.message:'Operational data could not be loaded' }
-  const late=active.filter(t=>t.pickupAt && t.pickupAt<new Date() && t.status!=='in_progress')
+  const late=active.filter(t=>t.pickupAt && t.pickupAt<new Date() && t.status!=='inTransit')
   return <div className="overview-page">
     <PageHeader eyebrow="Operational data" title="Operations overview" description="Read-only control-centre view backed by the canonical Firestore operational database." actions={<Link className="button secondary" href="/dashboard">Refresh</Link>} />
     {error && <div className="notice danger" role="alert"><AlertTriangle size={17}/><span>Operational data unavailable: {error}. Check server configuration and retry.</span></div>}

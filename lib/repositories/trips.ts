@@ -24,6 +24,6 @@ export class TripRepository {
     return { items, nextCursor:hasMore ? items.at(-1)?.id ?? null : null }
   }
   async get(id: string) { const doc=await getAdminFirestore().collection('trips').doc(id).get(); return doc.exists ? parseTrip(doc.id,doc.data()) : null }
-  async listRequiringAttention() { const result=await this.list({ pageSize:20 }); return result.items.filter(t=>t.assignmentStatus==='unassigned' || ['driver_en_route','at_pickup'].includes(t.status) && !!t.pickupAt && t.pickupAt<new Date()) }
-  async listActive() { const snapshots=await Promise.all(['driver_en_route','at_pickup','in_progress'].map(status=>getAdminFirestore().collection('trips').where('status','==',status).limit(50).get())); return snapshots.flatMap(s=>s.docs.map(d=>parseTrip(d.id,d.data()))) }
+  async listRequiringAttention() { const result=await this.list({ pageSize:20 }); return result.items.filter(t=>t.assignmentStatus==='unassigned' || ['driverEnRoute','driverArrived'].includes(t.status) && !!t.pickupAt && t.pickupAt<new Date()) }
+  async listActive() { const snapshots=await Promise.all(['driverEnRoute','driverArrived','inTransit'].map(status=>getAdminFirestore().collection('trips').where('status','==',status).limit(50).get())); return snapshots.flatMap(s=>s.docs.map(d=>parseTrip(d.id,d.data()))) }
 }
